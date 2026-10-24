@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Ragies Imports"
+description = "A mobile-first commerce storefront and order-management system for Ragies Imports, helping customers browse Ghana-ready and pre-order products while giving the business a reliable place to manage orders, inventory, payments, customers, and shipment batches."
+version = "1.0.0"
+id = "artifacts/ragies-imports"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24701
+
+[services.development]
+run = "pnpm --filter @workspace/ragies-imports run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ragies-imports", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/ragies-imports/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24701"
+BASE_PATH = "/"

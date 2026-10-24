@@ -1,0 +1,2105 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Ragies Imports commerce and order management API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: storefront
+    description: Customer-facing product and order operations
+  - name: admin
+    description: Order-management operations
+paths:
+  /admin/eta-reminders:
+    get:
+      operationId: getAdminEtaReminders
+      tags: [admin]
+      responses:
+        "200":
+          description: In-app staff arrival alerts and chronological batch dates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffEtaOverview"
+  /admin/sms:
+    get:
+      operationId: getAdminSms
+      tags: [admin]
+      responses:
+        "200":
+          description: Live SMS configuration and recent notification attempts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmsOverview"
+  /admin/sms/test:
+    post:
+      operationId: sendAdminTestSms
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmsTestInput"
+      responses:
+        "201":
+          description: Explicitly authorized live test message queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmsNotification"
+  /account/profile:
+    get:
+      operationId: getAccountProfile
+      summary: Read the signed-in account's saved contact phone
+      responses:
+        "200":
+          description: Contact preference, not verified identity or order ownership
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountContactProfile"
+        "401":
+          description: Sign-in required
+    patch:
+      operationId: updateAccountProfile
+      summary: Save or remove the signed-in account's contact phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountContactInput"
+      responses:
+        "200":
+          description: Saved contact details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountContactProfile"
+        "400":
+          description: Invalid phone number
+        "401":
+          description: Sign-in required
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [storefront]
+      summary: List product categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [storefront]
+      summary: List products
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: availability
+          in: query
+          schema:
+            type: string
+            enum: [ghana-stock, pre-order, all]
+            default: all
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [featured, newest, price-low, price-high]
+            default: featured
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [storefront]
+      summary: Get a product
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+  /content:
+    get:
+      operationId: getSiteContent
+      tags: [storefront]
+      summary: Get editable storefront content
+      responses:
+        "200":
+          description: Storefront content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContent"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [storefront]
+      summary: Place a customer order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Invalid order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /orders/track:
+    get:
+      operationId: trackOrder
+      tags: [storefront]
+      summary: Look up an order
+      parameters:
+        - name: orderNumber
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: phone
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /me/orders:
+    get:
+      operationId: listMyOrders
+      tags: [storefront]
+      summary: List the signed-in customer's orders
+      responses:
+        "200":
+          description: Customer orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /me/orders/{id}/payment:
+    post:
+      operationId: prepareOrderPayment
+      tags: [storefront]
+      summary: Prepare an outstanding order payment for the signed-in customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentPreparationInput"
+      responses:
+        "200":
+          description: Validated payment details ready for provider checkout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentPreparation"
+        "400":
+          description: No payable balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /orders/{id}/payment:
+    post:
+      operationId: initializeCheckoutPayment
+      tags: [storefront]
+      summary: Initialize the required Paystack payment for a newly placed order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutPaymentInput"
+      responses:
+        "200":
+          description: Paystack checkout initialized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentPreparation"
+        "400":
+          description: Invalid payment amount
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/dashboard:
+    get:
+      operationId: getAdminDashboard
+      tags: [admin]
+      summary: Get admin dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /admin/settings/exchange-rate:
+    get:
+      operationId: getExchangeRate
+      tags: [admin]
+      summary: Get the current CNY per GHS exchange rate
+      responses:
+        "200":
+          description: Current exchange rate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRate"
+    patch:
+      operationId: updateExchangeRate
+      tags: [admin]
+      summary: Update the current CNY per GHS exchange rate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRateInput"
+      responses:
+        "200":
+          description: Updated exchange rate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRate"
+  /admin/inventory:
+    get:
+      operationId: listAdminInventory
+      tags: [admin]
+      summary: List all inventory including hidden and sold-out products
+      responses:
+        "200":
+          description: Inventory
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+  /admin/inventory/{id}:
+    patch:
+      operationId: updateInventory
+      tags: [admin]
+      summary: Restock, adjust, hide, or restore a product
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryUpdate"
+      responses:
+        "200":
+          description: Updated inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+  /admin/customers:
+    get:
+      operationId: listCustomers
+      tags: [admin]
+      summary: Search customer records and order history
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+  /admin/access/me:
+    get:
+      operationId: getAdminAccess
+      tags: [admin]
+      summary: Get the signed-in staff member's role and permissions
+      responses:
+        "200":
+          description: Current staff access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+  /admin/staff:
+    get:
+      operationId: listStaff
+      tags: [admin]
+      summary: List staff access
+      responses:
+        "200":
+          description: Staff members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffMember"
+    post:
+      operationId: createStaff
+      tags: [admin]
+      summary: Give an existing signed-up user staff access
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffInput"
+      responses:
+        "201":
+          description: Staff access created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+  /admin/staff/{id}:
+    delete:
+      operationId: removeStaff
+      tags: [admin]
+      summary: Owner-only removal of staff access without deleting the account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "204":
+          description: Staff access removed; customer account and orders preserved
+        "401":
+          description: Sign-in required
+        "403":
+          description: Only an owner can remove staff
+        "404":
+          description: Staff member not found
+        "409":
+          description: Permanent owners cannot be removed
+    patch:
+      operationId: updateStaff
+      tags: [admin]
+      summary: Change or deactivate staff access
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffUpdate"
+      responses:
+        "200":
+          description: Staff access updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+  /admin/products/batches:
+    get:
+      operationId: listProductBatches
+      tags: [admin]
+      summary: Minimal shipment choices for product staff without shipment or customer records
+      responses:
+        "200":
+          description: Batch choices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductBatch"
+  /admin/data-protection:
+    get:
+      operationId: getDataProtectionSummary
+      tags: [admin]
+      summary: Get database protection and recovery status
+      responses:
+        "200":
+          description: Data protection summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataProtectionSummary"
+  /admin/data-protection/clear-test-orders:
+    post:
+      operationId: clearTestOrders
+      tags: [admin]
+      summary: Permanently clear test order history and statistics (verified owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestOrderResetInput"
+      responses:
+        "200":
+          description: Test orders removed; order-derived statistics recalculate from remaining data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestOrderResetResult"
+        "400":
+          description: Confirmation does not match
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Verified owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/data-protection/fresh-start:
+    post:
+      operationId: resetLaunchData
+      tags: [admin]
+      summary: Owner-only permanent removal of test products, orders and non-owner accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LaunchResetInput"
+      responses:
+        "200":
+          description: Reset counts, including any account deletions requiring retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LaunchResetResult"
+        "403":
+          description: Verified owner access required
+        "409":
+          description: Launch reset currently running
+  /admin/data-protection/export:
+    get:
+      operationId: exportDataSnapshot
+      tags: [admin]
+      summary: Export a complete operational data snapshot
+      responses:
+        "200":
+          description: Downloadable data snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSnapshot"
+  /admin/content:
+    patch:
+      operationId: updateSiteContent
+      tags: [admin]
+      summary: Update storefront content and contact details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteContentUpdate"
+      responses:
+        "200":
+          description: Updated storefront content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContent"
+  /admin/orders:
+    get:
+      operationId: listAdminOrders
+      tags: [admin]
+      summary: List and filter all orders
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: paymentStatus
+          in: query
+          schema:
+            type: string
+        - name: availability
+          in: query
+          schema:
+            type: string
+        - name: customer
+          in: query
+          schema:
+            type: string
+        - name: product
+          in: query
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createAdminOrder
+      tags: [admin]
+      summary: Create an order manually
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminOrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+  /admin/orders/trash:
+    get:
+      operationId: listDeletedAdminOrders
+      tags: [admin]
+      summary: List soft-deleted orders
+      responses:
+        "200":
+          description: Deleted orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+  /admin/orders/{id}:
+    patch:
+      operationId: updateAdminOrder
+      tags: [admin]
+      summary: Update an order
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteAdminOrder
+      tags: [admin]
+      summary: Move an order to the recycle bin
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      responses:
+        "204":
+          description: Order moved to recycle bin
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/orders/{id}/restore:
+    post:
+      operationId: restoreAdminOrder
+      tags: [admin]
+      summary: Restore an order from the recycle bin
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      responses:
+        "200":
+          description: Restored order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products:
+    post:
+      operationId: createProduct
+      tags: [admin]
+      summary: Add a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+  /admin/products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [admin]
+      summary: Update a product or its stock
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: archiveProduct
+      tags: [admin]
+      summary: Hide a product from the storefront
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "204":
+          description: Product archived
+  /admin/products/{id}/permanent:
+    delete:
+      operationId: deleteProduct
+      tags: [admin]
+      summary: Permanently delete a product, preserving historical order snapshots
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "204":
+          description: Product permanently deleted
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /promotions:
+    get:
+      operationId: listPromotions
+      tags: [storefront]
+      summary: List currently visible promotions
+      responses:
+        "200":
+          description: Active public promotions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Promotion"
+  /promotions/preview:
+    post:
+      operationId: previewPromotion
+      tags: [storefront]
+      summary: Preview a promo code against cart items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionPreviewInput"
+      responses:
+        "200":
+          description: Discounted cart totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromotionPreview"
+  /admin/promotions:
+    get:
+      operationId: listAdminPromotions
+      tags: [admin]
+      summary: List all promotions
+      responses:
+        "200":
+          description: Promotions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Promotion"
+    post:
+      operationId: createPromotion
+      tags: [admin]
+      summary: Create a promotion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionInput"
+      responses:
+        "201":
+          description: Created promotion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+  /admin/promotions/{id}:
+    patch:
+      operationId: updatePromotion
+      tags: [admin]
+      summary: Update a promotion
+      parameters:
+        - $ref: "#/components/parameters/PromotionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionUpdate"
+      responses:
+        "200":
+          description: Updated promotion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+    delete:
+      operationId: deletePromotion
+      tags: [admin]
+      summary: Delete a promotion
+      parameters:
+        - $ref: "#/components/parameters/PromotionId"
+      responses:
+        "204":
+          description: Promotion deleted
+  /admin/shipments:
+    get:
+      operationId: listShipments
+      tags: [admin]
+      summary: List import shipments
+      responses:
+        "200":
+          description: Shipments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shipment"
+    post:
+      operationId: createShipment
+      tags: [admin]
+      summary: Create an import shipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShipmentInput"
+      responses:
+        "201":
+          description: Shipment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+  /admin/shipments/{id}:
+    patch:
+      operationId: updateShipment
+      tags: [admin]
+      summary: Update an import shipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShipmentUpdate"
+      responses:
+        "200":
+          description: Updated shipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+    delete:
+      operationId: deleteShipment
+      tags: [admin]
+      summary: Delete an import shipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Shipment deleted
+components:
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    PromotionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+  schemas:
+    AccountContactProfile:
+      type: object
+      required: [phone]
+      properties:
+        phone: { type: ["string", "null"] }
+    AccountContactInput:
+      type: object
+      required: [phone]
+      properties:
+        phone: { type: ["string", "null"], maxLength: 30 }
+    BatchDateEvent:
+      type: object
+      required: [id, batchId, batchName, batchStatus, type, date, productNames, daysUntil, urgent, hasClosingDates]
+      properties:
+        id: { type: string }
+        batchId: { type: integer }
+        batchName: { type: string }
+        batchStatus: { type: string }
+        type: { type: string, enum: [closing, arrival, product-arrival] }
+        date: { type: string }
+        productNames:
+          type: array
+          items: { type: string }
+        daysUntil: { type: integer }
+        urgent: { type: boolean }
+        hasClosingDates: { type: boolean }
+    StaffEtaAlert:
+      type: object
+      required: [id, type, entityId, name, expectedArrival, severity, daysOverdue, batchId, batchName]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [shipment, product] }
+        entityId: { type: integer }
+        name: { type: string }
+        expectedArrival: { type: string }
+        severity: { type: string, enum: [due-today, overdue] }
+        daysOverdue: { type: integer }
+        batchId: { type: [integer, "null"] }
+        batchName: { type: [string, "null"] }
+    StaffEtaOverview:
+      type: object
+      required: [today, alerts, schedule, warningDays]
+      properties:
+        today: { type: string }
+        alerts:
+          type: array
+          items: { $ref: "#/components/schemas/StaffEtaAlert" }
+        schedule:
+          type: array
+          items: { $ref: "#/components/schemas/BatchDateEvent" }
+        warningDays: { type: integer }
+    SmsTestInput:
+      type: object
+      required: [phone, confirmLiveSend]
+      properties:
+        phone: { type: string, minLength: 5, maxLength: 30 }
+        confirmLiveSend: { type: boolean }
+    SmsNotification:
+      type: object
+      required: [id, orderId, kind, phone, message, status, attempts, providerMessageId, error, createdAt, sentAt]
+      properties:
+        id: { type: integer }
+        orderId: { type: [integer, "null"] }
+        kind: { type: string }
+        phone: { type: string }
+        message: { type: string }
+        status: { type: string }
+        attempts: { type: integer }
+        providerMessageId: { type: [string, "null"] }
+        error: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        sentAt: { type: [string, "null"], format: date-time }
+    SmsOverview:
+      type: object
+      required: [mode, configured, canSendTest, username, senderId, missingSettings, notifications]
+      properties:
+        mode: { type: string, enum: [live] }
+        configured: { type: boolean }
+        canSendTest: { type: boolean }
+        username: { type: [string, "null"] }
+        senderId: { type: [string, "null"] }
+        missingSettings:
+          type: array
+          items: { type: string }
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/SmsNotification"
+    ProductVariant:
+      type: object
+      properties:
+        name: { type: string }
+        colors:
+          type: array
+          items: { type: string }
+        quantities:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantColorQuantity"
+      required: [name, colors]
+    VariantColorQuantity:
+      type: object
+      properties:
+        color: { type: string, minLength: 1 }
+        quantity: { type: integer, minimum: 0 }
+      required: [color, quantity]
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    Category:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        count:
+          type: integer
+      required: [slug, name, count]
+    Product:
+      type: object
+      properties:
+        shipmentId:
+          type: ["integer", "null"]
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        costPrice:
+          type: ["number", "null"]
+          minimum: 0
+        costCurrency:
+          type: ["string", "null"]
+          enum: [GHS, CNY, null]
+        compareAtPrice:
+          type: ["number", "null"]
+        currency:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        colors:
+          type: array
+          items:
+            type: string
+        sizes:
+          type: array
+          items:
+            type: string
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductVariant"
+        availability:
+          type: string
+          enum: [ghana-stock, pre-order]
+        stockQuantity:
+          type: integer
+          minimum: 0
+        preOrderCloseDate:
+          type: ["string", "null"]
+        eta:
+          type: ["string", "null"]
+        featured:
+          type: boolean
+        hidden:
+          type: boolean
+        preOrderClosed:
+          type: boolean
+      required:
+        - id
+        - name
+        - slug
+        - category
+        - description
+        - price
+        - compareAtPrice
+        - currency
+        - images
+        - colors
+        - sizes
+        - variants
+        - availability
+        - stockQuantity
+        - preOrderCloseDate
+        - eta
+        - featured
+        - hidden
+        - preOrderClosed
+    ProductInput:
+      type: object
+      properties:
+        shipmentId:
+          type: ["integer", "null"]
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          minimum: 0.01
+        costPrice:
+          type: ["number", "null"]
+          minimum: 0
+        costCurrency:
+          type: string
+          enum: [GHS, CNY]
+        availability:
+          type: string
+          enum: [ghana-stock, pre-order]
+        stockQuantity:
+          type: integer
+          minimum: 0
+        images:
+          type: array
+          items:
+            type: string
+        colors:
+          type: array
+          items:
+            type: string
+        sizes:
+          type: array
+          items:
+            type: string
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductVariant"
+        preOrderCloseDate:
+          type: ["string", "null"]
+        eta:
+          type: ["string", "null"]
+      required: [name, category, description, price, availability, stockQuantity]
+    ProductUpdate:
+      type: object
+      properties:
+        shipmentId:
+          type: ["integer", "null"]
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          minimum: 0.01
+        costPrice:
+          type: ["number", "null"]
+          minimum: 0
+        costCurrency:
+          type: string
+          enum: [GHS, CNY]
+        compareAtPrice:
+          type: ["number", "null"]
+        images:
+          type: array
+          items:
+            type: string
+        colors:
+          type: array
+          items:
+            type: string
+        sizes:
+          type: array
+          items:
+            type: string
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductVariant"
+        availability:
+          type: string
+          enum: [ghana-stock, pre-order]
+        stockQuantity:
+          type: integer
+          minimum: 0
+        preOrderCloseDate:
+          type: ["string", "null"]
+        eta:
+          type: ["string", "null"]
+        featured:
+          type: boolean
+        hidden:
+          type: boolean
+    InventoryUpdate:
+      type: object
+      properties:
+        stockAdjustment:
+          type: integer
+          description: Atomic stock change; cannot be combined with stockQuantity.
+        stockQuantity:
+          type: integer
+          minimum: 0
+        hidden:
+          type: boolean
+      minProperties: 1
+    Promotion:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+        discountValue: { type: number }
+        code: { type: ["string", "null"] }
+        scope:
+          type: string
+          enum: [all, specific, clearance]
+        productIds:
+          type: array
+          items: { type: integer }
+        startsOn: { type: ["string", "null"] }
+        endsOn: { type: ["string", "null"] }
+        active: { type: boolean }
+        currentlyActive: { type: boolean }
+        createdAt: { type: string }
+      required: [id, name, description, discountType, discountValue, code, scope, productIds, startsOn, endsOn, active, currentlyActive, createdAt]
+    PromotionInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        description: { type: string }
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+        discountValue: { type: number, exclusiveMinimum: 0 }
+        code: { type: ["string", "null"] }
+        scope:
+          type: string
+          enum: [all, specific, clearance]
+        productIds:
+          type: array
+          items: { type: integer }
+        startsOn: { type: ["string", "null"] }
+        endsOn: { type: ["string", "null"] }
+        active: { type: boolean }
+      required: [name, discountType, discountValue, scope]
+    PromotionUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        description: { type: string }
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+        discountValue: { type: number, exclusiveMinimum: 0 }
+        code: { type: ["string", "null"] }
+        scope:
+          type: string
+          enum: [all, specific, clearance]
+        productIds:
+          type: array
+          items: { type: integer }
+        startsOn: { type: ["string", "null"] }
+        endsOn: { type: ["string", "null"] }
+        active: { type: boolean }
+    PromotionPreviewInput:
+      type: object
+      properties:
+        code: { type: string, minLength: 1 }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLineInput"
+      required: [code, items]
+    PromotionPreview:
+      type: object
+      properties:
+        valid: { type: boolean }
+        promotionName: { type: ["string", "null"] }
+        subtotal: { type: number }
+        discount: { type: number }
+        total: { type: number }
+        message: { type: string }
+      required: [valid, promotionName, subtotal, discount, total, message]
+    OrderLine:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        color:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        availability:
+          type: string
+        eta:
+          type: ["string", "null"]
+        currentEta:
+          type: ["string", "null"]
+        variantType:
+          type: ["string", "null"]
+      required: [productId, productName, quantity, unitPrice, color, size, availability, eta, currentEta, variantType]
+    OrderInput:
+      type: object
+      properties:
+        customerName:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: ["string", "null"]
+        address:
+          type: string
+        city:
+          type: ["string", "null"]
+        fulfillmentMethod:
+          type: string
+          enum: [delivery, pickup]
+        notes:
+          type: ["string", "null"]
+        paymentMethod:
+          type: string
+          enum: [mobile-money, cash, bank-transfer, paystack]
+        promoCode:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLineInput"
+      required: [customerName, phone, address, city, fulfillmentMethod, paymentMethod, items]
+    PaymentPreparationInput:
+      type: object
+      properties:
+        purpose:
+          type: string
+          enum: [merchandise-balance, shipping-fee]
+      required: [purpose]
+    CheckoutPaymentInput:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+        email:
+          type: string
+          format: email
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        channel:
+          type: string
+          enum: [mobile_money, card, bank_transfer]
+      required: [orderNumber, email, amount, channel]
+    PaymentPreparation:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        orderNumber:
+          type: string
+        purpose:
+          type: string
+          enum: [merchandise-balance, shipping-fee]
+        amount:
+          type: number
+        currency:
+          type: string
+        providerReady:
+          type: boolean
+        authorizationUrl:
+          type: string
+        reference:
+          type: string
+        message:
+          type: string
+      required: [orderId, orderNumber, purpose, amount, currency, providerReady, authorizationUrl, reference, message]
+    OrderLineInput:
+      type: object
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+        color:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        variantType:
+          type: ["string", "null"]
+      required: [productId, quantity]
+    OrderUpdate:
+      type: object
+      properties:
+        customerName:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        whatsapp:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        fulfillmentMethod:
+          type: ["string", "null"]
+          enum: [delivery, pickup]
+        paymentMethod:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+          enum: [New Order, Awaiting Payment, Processing, In China, Shipped, Arrived in Ghana, Packing, Ready for Pickup, Out for Delivery, Completed, Cancelled]
+        paymentStatus:
+          type: ["string", "null"]
+        amountPaid:
+          type: ["number", "null"]
+        shippingFeePaid:
+          type: ["number", "null"]
+          minimum: 0
+        notes:
+          type: ["string", "null"]
+        shipmentName:
+          type: ["string", "null"]
+    AdminOrderInput:
+      type: object
+      properties:
+        customerName:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: ["string", "null"]
+        address:
+          type: string
+        city:
+          type: ["string", "null"]
+        fulfillmentMethod:
+          type: string
+          enum: [delivery, pickup]
+        notes:
+          type: ["string", "null"]
+        paymentMethod:
+          type: string
+        amountPaid:
+          type: number
+          default: 0
+        status:
+          type: string
+          default: New Order
+        paymentStatus:
+          type: string
+        shipmentName:
+          type: ["string", "null"]
+        trackingId:
+          type: ["string", "null"]
+        shippingId:
+          type: ["string", "null"]
+        pickupId:
+          type: ["string", "null"]
+        preorderPickupId:
+          type: ["string", "null"]
+        shippingFeeTotal:
+          type: number
+        shippingFeePaid:
+          type: number
+        minimumPaymentAmount:
+          type: number
+        baseBalance:
+          type: number
+        shippingBalance:
+          type: number
+        canPayBalance:
+          type: boolean
+        canPayShippingFee:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLineInput"
+      required: [customerName, phone, address, city, paymentMethod, items]
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderNumber:
+          type: string
+        customerName:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: ["string", "null"]
+        address:
+          type: string
+        city:
+          type: string
+        fulfillmentMethod:
+          type: string
+          enum: [delivery, pickup]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLine"
+        totalAmount:
+          type: number
+        amountPaid:
+          type: number
+        balance:
+          type: number
+        paymentStatus:
+          type: string
+          enum: [unpaid, partial, paid]
+        paymentMethod:
+          type: string
+        status:
+          type: string
+          enum: [New Order, Awaiting Payment, Processing, In China, Shipped, Arrived in Ghana, Packing, Ready for Pickup, Out for Delivery, Completed, Cancelled]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        shipmentName:
+          type: ["string", "null"]
+        trackingId:
+          type: ["string", "null"]
+        shippingId:
+          type: ["string", "null"]
+        pickupId:
+          type: ["string", "null"]
+        preorderPickupId:
+          type: ["string", "null"]
+        shippingFeeTotal:
+          type: number
+        shippingFeePaid:
+          type: number
+        minimumPaymentAmount:
+          type: number
+        baseBalance:
+          type: number
+        shippingBalance:
+          type: number
+        canPayBalance:
+          type: boolean
+        canPayShippingFee:
+          type: boolean
+      required:
+        - id
+        - orderNumber
+        - customerName
+        - phone
+        - whatsapp
+        - address
+        - city
+        - fulfillmentMethod
+        - items
+        - totalAmount
+        - amountPaid
+        - balance
+        - paymentStatus
+        - paymentMethod
+        - status
+        - notes
+        - createdAt
+        - shipmentName
+        - trackingId
+        - shippingId
+        - pickupId
+        - preorderPickupId
+        - shippingFeeTotal
+        - shippingFeePaid
+        - minimumPaymentAmount
+        - baseBalance
+        - shippingBalance
+        - canPayBalance
+        - canPayShippingFee
+    Customer:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: ["string", "null"]
+        address:
+          type: string
+        city:
+          type: string
+        orderCount:
+          type: integer
+        totalPurchases:
+          type: number
+        outstandingBalance:
+          type: number
+        currentOrders:
+          type: integer
+        lastOrderAt:
+          type: string
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+      required: [key, name, phone, whatsapp, address, city, orderCount, totalPurchases, outstandingBalance, currentOrders, lastOrderAt, orders]
+    StaffPermission:
+      type: string
+      enum: [dashboard, orders, customers, payments, inventory, products, shipments, promotions, content, access, data-protection]
+    SiteContent:
+      type: object
+      properties:
+        heroEyebrow: { type: string }
+        heroTitle: { type: string }
+        heroAccent: { type: string }
+        heroDescription: { type: string }
+        aboutTitle: { type: string }
+        aboutStory: { type: string }
+        contactPhone: { type: string }
+        contactLocation: { type: string }
+        businessHours: { type: string }
+        featuredCategories:
+          description: Category names shown on the homepage, in order. Null keeps the default first three.
+          type: ["array", "null"]
+          maxItems: 3
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+        updatedAt: { type: string }
+      required: [heroEyebrow, heroTitle, heroAccent, heroDescription, aboutTitle, aboutStory, contactPhone, contactLocation, businessHours, featuredCategories, updatedAt]
+    SiteContentUpdate:
+      type: object
+      properties:
+        heroEyebrow: { type: string, minLength: 1 }
+        heroTitle: { type: string, minLength: 1 }
+        heroAccent: { type: string, minLength: 1 }
+        heroDescription: { type: string, minLength: 1 }
+        aboutTitle: { type: string, minLength: 1 }
+        aboutStory: { type: string, minLength: 1 }
+        contactPhone: { type: string, minLength: 1 }
+        contactLocation: { type: string, minLength: 1 }
+        businessHours: { type: string, minLength: 1 }
+        featuredCategories:
+          description: Category names shown on the homepage, in order. Null restores the default first three.
+          type: ["array", "null"]
+          maxItems: 3
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+      minProperties: 1
+    StaffMember:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role:
+          type: string
+          enum: [owner, manager, operations, sales, catalog, custom]
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/StaffPermission"
+        active: { type: boolean }
+      required: [id, name, email, role, permissions, active]
+    StaffInput:
+      type: object
+      properties:
+        email: { type: string }
+        role:
+          type: string
+          enum: [manager, operations, sales, catalog, custom]
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/StaffPermission"
+      required: [email, role, permissions]
+    StaffUpdate:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [manager, operations, sales, catalog, custom]
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/StaffPermission"
+        active: { type: boolean }
+      minProperties: 1
+    ProductBatch:
+      type: object
+      required: [id, name, expectedArrival]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        expectedArrival: { type: string }
+        preOrderCloseDate: { type: ["string", "null"] }
+    TestOrderResetInput:
+      type: object
+      required: [confirmation]
+      properties:
+        confirmation:
+          type: string
+          enum: ["DELETE TEST ORDERS"]
+    TestOrderResetResult:
+      type: object
+      required: [ordersDeleted]
+      properties:
+        ordersDeleted:
+          type: integer
+          minimum: 0
+    LaunchResetInput:
+      type: object
+      required: [confirmation]
+      properties:
+        confirmation:
+          type: string
+          enum: [DELETE TEST DATA]
+    LaunchResetResult:
+      type: object
+      required: [productsDeleted, ordersDeleted, shipmentsDeleted, smsNotificationsDeleted, accountsDeleted, accountsFailed, databaseAlreadyReset]
+      properties:
+        productsDeleted: { type: integer }
+        ordersDeleted: { type: integer }
+        shipmentsDeleted: { type: integer }
+        smsNotificationsDeleted: { type: integer }
+        accountsDeleted: { type: integer }
+        accountsFailed: { type: integer }
+        databaseAlreadyReset: { type: boolean }
+    DataProtectionSummary:
+      type: object
+      properties:
+        database: { type: string }
+        encryptedConnection: { type: boolean }
+        automaticProductionBackups: { type: boolean }
+        pointInTimeRecovery: { type: boolean }
+        developmentCheckpoints: { type: boolean }
+        softDeletedOrders: { type: integer }
+        activeOrders: { type: integer }
+        products: { type: integer }
+        customers: { type: integer }
+        recoveryNote: { type: string }
+      required: [database, encryptedConnection, automaticProductionBackups, pointInTimeRecovery, developmentCheckpoints, softDeletedOrders, activeOrders, products, customers, recoveryNote]
+    DataSnapshot:
+      type: object
+      properties:
+        formatVersion: { type: integer }
+        exportedAt: { type: string }
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/SnapshotOrder"
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        customers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Customer"
+        promotions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Promotion"
+        shipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Shipment"
+        siteContent:
+          $ref: "#/components/schemas/SiteContent"
+      required: [formatVersion, exportedAt, orders, products, customers, promotions, shipments, siteContent]
+    SnapshotOrder:
+      allOf:
+        - $ref: "#/components/schemas/Order"
+        - type: object
+          properties:
+            deletedAt:
+              type: ["string", "null"]
+          required: [deletedAt]
+    DashboardSummary:
+      type: object
+      properties:
+        cnyPerGhs:
+          type: number
+        cnyRateGhs:
+          type: number
+          deprecated: true
+        totalCost:
+          type: number
+        grossProfit:
+          type: number
+        grossMarginPercentage:
+          type: number
+        costDataComplete:
+          type: boolean
+        missingCostOrderCount:
+          type: integer
+        totalSales:
+          type: number
+        ordersReceived:
+          type: integer
+        paidOrders:
+          type: integer
+        unpaidOrPartialOrders:
+          type: integer
+        outstandingBalance:
+          type: number
+        availableStock:
+          type: integer
+        preOrderSales:
+          type: number
+        ghanaStockSales:
+          type: number
+        currentMonthSales:
+          type: number
+        previousMonthSales:
+          type: number
+        salesTrendDirection:
+          type: string
+          enum: [up, down, flat]
+        salesTrendPercentage:
+          type: number
+        salesByMonth:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalesPeriod"
+        bestSellingProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSales"
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+      required: [cnyPerGhs, totalCost, grossProfit, grossMarginPercentage, costDataComplete, missingCostOrderCount, totalSales, ordersReceived, paidOrders, unpaidOrPartialOrders, outstandingBalance, availableStock, preOrderSales, ghanaStockSales, currentMonthSales, previousMonthSales, salesTrendDirection, salesTrendPercentage, salesByMonth, bestSellingProducts, recentOrders]
+    ExchangeRateInput:
+      type: object
+      properties:
+        cnyPerGhs:
+          type: number
+          exclusiveMinimum: 0
+        cnyRateGhs:
+          type: number
+          exclusiveMinimum: 0
+          deprecated: true
+      anyOf:
+        - required: [cnyPerGhs]
+        - required: [cnyRateGhs]
+    ExchangeRate:
+      type: object
+      properties:
+        cnyPerGhs:
+          type: number
+        cnyRateGhs:
+          type: number
+          deprecated: true
+        updatedAt:
+          type: string
+      required: [cnyPerGhs, updatedAt]
+    SalesPeriod:
+      type: object
+      properties:
+        month:
+          type: string
+        label:
+          type: string
+        sales:
+          type: number
+        cost:
+          type: number
+        profit:
+          type: number
+        marginPercentage:
+          type: number
+        orders:
+          type: integer
+      required: [month, label, sales, cost, profit, marginPercentage, orders]
+    ProductSales:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: integer
+        revenue:
+          type: number
+      required: [productId, productName, quantity, revenue]
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          type: string
+          enum: [preparing, in-transit, arrived, completed]
+        expectedArrival:
+          type: string
+        preOrderCloseDate:
+          type: ["string", "null"]
+        actualArrival:
+          type: ["string", "null"]
+        orderCount:
+          type: integer
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        productNames:
+          type: array
+          items:
+            type: string
+        notes:
+          type: ["string", "null"]
+        productFees:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentProductFee"
+      required: [id, name, status, expectedArrival, actualArrival, orderCount, orders, productNames, notes, productFees]
+    ShipmentInput:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [preparing, in-transit, arrived, completed]
+        expectedArrival:
+          type: string
+        preOrderCloseDate:
+          type: ["string", "null"]
+        actualArrival:
+          type: ["string", "null"]
+        orderIds:
+          type: array
+          items:
+            type: integer
+        notes:
+          type: ["string", "null"]
+        productFees:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentProductFee"
+      required: [name, expectedArrival]
+    ShipmentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [preparing, in-transit, arrived, completed]
+        expectedArrival:
+          type: string
+        preOrderCloseDate:
+          type: ["string", "null"]
+        actualArrival:
+          type: ["string", "null"]
+        orderIds:
+          type: array
+          items:
+            type: integer
+        notes:
+          type: ["string", "null"]
+        productFees:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentProductFee"
+    ShipmentProductFee:
+      type: object
+      properties:
+        productId: { type: integer }
+        productName: { type: string }
+        feePerItem: { type: number, minimum: 0 }
+      required: [productId, productName, feePerItem]
+

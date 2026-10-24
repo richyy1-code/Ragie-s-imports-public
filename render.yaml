@@ -1,0 +1,43 @@
+# A paid web service keeps the app and its background workers running.
+# DATABASE_URL is supplied separately to avoid creating a paid database by default.
+services:
+  - type: web
+    name: ragies-imports
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    numInstances: 1
+    healthCheckPath: /api/healthz
+    disk:
+      name: ragies-product-images
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEPLOYMENT_PROVIDER
+        value: render
+      - key: OBJECT_STORAGE_PROVIDER
+        value: volume
+      - key: OBJECT_STORAGE_DIR
+        value: /var/data/images
+      - key: DATABASE_URL
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: OWNER_EMAILS
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: AFRICAS_TALKING_API_KEY
+        sync: false
+      - key: AFRICAS_TALKING_USERNAME
+        sync: false
+      - key: AFRICAS_TALKING_SENDER_ID
+        sync: false

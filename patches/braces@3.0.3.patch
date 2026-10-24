@@ -1,0 +1,143 @@
+diff --git a/index.js b/index.js
+index d222c13b579d2d476dc26d692219dbaee1665b88..1802aad764978cbba9e40348d456475e1233ad31 100644
+--- a/index.js
++++ b/index.js
+@@ -5,6 +5,24 @@ const compile = require('./lib/compile');
+ const expand = require('./lib/expand');
+ const parse = require('./lib/parse');
+ 
++// Accept bounded trees only, including ASTs supplied directly to the public API.
++const boundedAst = ast => {
++  const pending = [{ node: ast, depth: 0 }];
++  const visited = new WeakSet();
++  while (pending.length) {
++    const { node, depth } = pending.pop();
++    if (!node || typeof node !== 'object') continue;
++    if (depth > 65 || visited.has(node)) {
++      throw new SyntaxError('Brace AST is cyclic or exceeds the safe nesting limit');
++    }
++    visited.add(node);
++    if (Array.isArray(node.nodes)) {
++      for (const child of node.nodes) pending.push({ node: child, depth: depth + 1 });
++    }
++  }
++  return ast;
++};
++
+ /**
+  * Expand the given pattern or create a regex-compatible string.
+  *
+@@ -75,7 +93,7 @@ braces.stringify = (input, options = {}) => {
+   if (typeof input === 'string') {
+     return stringify(braces.parse(input, options), options);
+   }
+-  return stringify(input, options);
++  return stringify(boundedAst(input), options);
+ };
+ 
+ /**
+@@ -97,7 +115,7 @@ braces.compile = (input, options = {}) => {
+   if (typeof input === 'string') {
+     input = braces.parse(input, options);
+   }
+-  return compile(input, options);
++  return compile(boundedAst(input), options);
+ };
+ 
+ /**
+@@ -122,7 +140,7 @@ braces.expand = (input, options = {}) => {
+     input = braces.parse(input, options);
+   }
+ 
+-  let result = expand(input, options);
++  let result = expand(boundedAst(input), options);
+ 
+   // filter out empty strings if specified
+   if (options.noempty === true) {
+diff --git a/lib/parse.js b/lib/parse.js
+index 3a6988e629f52aee6609dc5ec290a5e9ff47cecb..0b5379edbe070f4eeeada423a8a50d681ab0e913 100644
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -74,6 +74,10 @@ const parse = (input, options = {}) => {
+   push({ type: 'bos' });
+ 
+   while (index < length) {
++    // Bound AST depth before any recursive stringify/compile/expand walker runs.
++    if (stack.length > 65) {
++      throw new SyntaxError('Brace/parenthesis nesting exceeds the safe limit of 64');
++    }
+     block = stack[stack.length - 1];
+     value = advance();
+ 
+diff --git a/lib/compile.js b/lib/compile.js
+--- a/lib/compile.js
++++ b/lib/compile.js
+@@ -4,7 +4,10 @@ const fill = require('fill-range');
+ const utils = require('./utils');
+ 
+ const compile = (ast, options = {}) => {
+-  const walk = (node, parent = {}) => {
++  const walk = (node, parent = {}, depth = 0) => {
++    if (depth > 65) {
++      throw new SyntaxError('Brace AST exceeds the safe nesting limit');
++    }
+     const invalidBlock = utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+     const invalid = invalidBlock === true || invalidNode === true;
+@@ -47,7 +50,7 @@ const compile = (ast, options = {}) => {
+ 
+     if (node.nodes) {
+       for (const child of node.nodes) {
+-        output += walk(child, node);
++        output += walk(child, node, depth + 1);
+       }
+     }
+ 
+diff --git a/lib/expand.js b/lib/expand.js
+--- a/lib/expand.js
++++ b/lib/expand.js
+@@ -32,7 +32,10 @@ const append = (queue = '', stash = '', enclose = false) => {
+ const expand = (ast, options = {}) => {
+   const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;
+ 
+-  const walk = (node, parent = {}) => {
++  const walk = (node, parent = {}, depth = 0) => {
++    if (depth > 65) {
++      throw new SyntaxError('Brace AST exceeds the safe nesting limit');
++    }
+     node.queue = [];
+ 
+     let p = parent;
+@@ -100,7 +103,7 @@ const expand = (ast, options = {}) => {
+       }
+ 
+       if (child.nodes) {
+-        walk(child, node);
++        walk(child, node, depth + 1);
+       }
+     }
+ 
+diff --git a/lib/stringify.js b/lib/stringify.js
+--- a/lib/stringify.js
++++ b/lib/stringify.js
+@@ -3,7 +3,10 @@
+ const utils = require('./utils');
+ 
+ module.exports = (ast, options = {}) => {
+-  const stringify = (node, parent = {}) => {
++  const stringify = (node, parent = {}, depth = 0) => {
++    if (depth > 65) {
++      throw new SyntaxError('Brace AST exceeds the safe nesting limit');
++    }
+     const invalidBlock = options.escapeInvalid && utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+     let output = '';
+@@ -23,7 +26,7 @@ module.exports = (ast, options = {}) => {
+ 
+     if (node.nodes) {
+       for (const child of node.nodes) {
+-        output += stringify(child);
++        output += stringify(child, {}, depth + 1);
+       }
+     }
+     return output;
