@@ -1,6 +1,6 @@
 # Ragie’s Imports
 
-A full stack ecommerce application for a Ghana focused import business, with a customer storefront and an administration dashboard.
+A full-stack e-commerce application for a Ghana-focused import business, with a customer storefront and an administration dashboard.
 
 **Live website:** https://ragieimports.com  
 **Developer:** Richard Boampong
@@ -16,8 +16,8 @@ This is a separate public portfolio copy of the application source. It contains 
 * Paystack payment verification, inventory handling, and preorder reservations.
 * Staff permissions, order administration, shipment tracking, and website content editing.
 * SMS notifications through Africa’s Talking.
-* Owner restricted test data reset with a confirmation phrase.
-* Fixed homepage photograph, original quality image uploads, and guidance for small photos.
+* Owner-restricted test data reset with a confirmation phrase.
+
 
 ## Stack
 
@@ -92,8 +92,8 @@ Use the root `Dockerfile` and `render.yaml`, or follow [RENDER_SETUP.md](RENDER_
 
 ## Public copy and access
 
-Owner email addresses are read from the server variable `OWNER_EMAILS`, separated by commas. Addresses are normalized and still require verified Clerk identities. An empty value grants no implicit owner access. The staff access checks and owner restricted reset remain enabled.
+Owner email addresses are read from the server variable `OWNER_EMAILS`, separated by commas. Addresses are normalized and still require verified Clerk identities. An empty value grants no implicit owner access. The staff access checks and owner-restricted reset remain enabled.
 
 Do not copy this public version over the production repository without configuring `OWNER_EMAILS` first. Keep `.env`, database exports, uploaded customer data, and private keys outside Git. Example values and synthetic test fixtures are not production credentials.
 
-The bundled homepage photo is an AI enhanced version of a supplied image. Product images and branding are included for project presentation; no additional rights to third party assets are granted by this repository. No open source license has been added to this portfolio copy. Public visibility alone does not grant reuse rights.
+The bundled homepage photo is an AI-enhanced version of a supplied image. Product images and branding are included for project presentation; no additional rights to third-party assets are granted by this repository. No open-source license has been added to this portfolio copy. Public visibility alone does not grant reuse rights.
