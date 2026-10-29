@@ -12,8 +12,8 @@ export function InheritedClosingField({ shipmentId, rawDate, onChange, testId = 
       <input type="date" required value={displayed} onChange={(event) => onChange(event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-input bg-card px-3 text-sm" data-testid={testId} />
     </label>
     <p className="mt-2 text-xs leading-5 text-muted-foreground" aria-live="polite">{inherited
-      ? batch?.preOrderCloseDate ? `Using ${batch.name} closing date. Future batch edits update this product automatically.` : 'Set a closing date on the shipment batch or enter a custom product date.'
-      : `Custom product date. ${batch?.preOrderCloseDate ? `Batch closes ${date(batch.preOrderCloseDate)}. ` : ''}This product keeps its custom date when the batch changes.`}</p>
+      ? batch?.preOrderCloseDate ? `Using ${batch.name} closing date.` : 'Set a closing date on the shipment batch or enter a custom product date.'
+      : `Custom product date. ${batch?.preOrderCloseDate ? `Batch closes ${date(batch.preOrderCloseDate)}. ` : ''}`}</p>
     {!inherited && <button type="button" onClick={() => onChange('')} className="mt-2 text-xs font-bold text-primary underline" data-testid={`${testId}-reset`}>Use batch date</button>}
     {batches.isError && <p role="alert" className="mt-2 text-xs text-destructive">Batch date could not be loaded. Retry loading the batch or enter a custom date.</p>}
   </div>;

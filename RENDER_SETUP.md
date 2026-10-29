@@ -1,7 +1,3 @@
-# Public copy setup note
-
-Before using this copy, set `OWNER_EMAILS` to your own verified Clerk email addresses, separated by commas. No owner accounts are hardcoded. All provider credentials and messaging sender settings must be supplied for your installation. For a fresh database, use the schema initialization in README.md; the migration and old storage export sections below apply only when moving an existing installation.
-
 # Ragies Imports on Render
 
 The supplied `render.yaml` configures one paid Docker web service and a 1 GB persistent disk. The frontend, Express API, SMS worker, preorder reservation worker, and abuse cleanup run together. The existing store UI, payment rules, inventory logic, staff access, and API paths are preserved.

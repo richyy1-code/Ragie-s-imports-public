@@ -1,3 +1,4 @@
+import { settleAccountPayment } from "./account-payments";
 import { eq } from "drizzle-orm";
 import { db, ordersTable } from "@workspace/db";
 import { verifiedPaymentUpdate, type VerifiedTransaction } from "./checkout-payment";
@@ -8,6 +9,9 @@ import { queueOrderSms } from "./sms-notifications";
 
 /** Called only after server-side provider verification, by both callback and webhook. */
 export async function applyVerifiedPayment(transaction: VerifiedTransaction) {
+  if (transaction.metadata?.account_payment) {
+    return db.transaction((tx) => settleAccountPayment(tx, transaction));
+  }
   const orderId = Number(transaction.metadata?.order_id);
   if (!Number.isInteger(orderId) || !transaction.metadata?.purpose
     || transaction.status !== "success" || transaction.currency !== "GHS") return false;

@@ -1,0 +1,254 @@
+{
+  "replicas": 8,
+  "durationMs": 8000,
+  "seededKeys": 19900,
+  "maxKeys": 20000,
+  "replicaModel": "independent HTTP servers and pools, one Node process",
+  "timing": "HTTP round-trip including local fetch; no real business/provider work",
+  "sustained10": {
+    "requests": 80,
+    "elapsedMs": 8049,
+    "requestsPerSecond": 9.9,
+    "p50Ms": 14,
+    "p95Ms": 36,
+    "p99Ms": 146,
+    "maxMs": 146,
+    "statuses": {
+      "200": 80
+    },
+    "maxInFlight": 1,
+    "bypass": {
+      "requests": 32,
+      "elapsedMs": 147,
+      "requestsPerSecond": 218.4,
+      "p50Ms": 104,
+      "p95Ms": 140,
+      "p99Ms": 141,
+      "maxMs": 141,
+      "statuses": {
+        "200": 32
+      }
+    }
+  },
+  "sustained30": {
+    "requests": 240,
+    "elapsedMs": 8027,
+    "requestsPerSecond": 29.9,
+    "p50Ms": 13,
+    "p95Ms": 19,
+    "p99Ms": 32,
+    "maxMs": 60,
+    "statuses": {
+      "200": 240
+    },
+    "maxInFlight": 1,
+    "bypass": {
+      "requests": 32,
+      "elapsedMs": 50,
+      "requestsPerSecond": 643.7,
+      "p50Ms": 38,
+      "p95Ms": 45,
+      "p99Ms": 45,
+      "maxMs": 45,
+      "statuses": {
+        "200": 32
+      }
+    }
+  },
+  "sustained60": {
+    "requests": 480,
+    "elapsedMs": 8044,
+    "requestsPerSecond": 59.7,
+    "p50Ms": 12,
+    "p95Ms": 18,
+    "p99Ms": 35,
+    "maxMs": 60,
+    "statuses": {
+      "200": 480
+    },
+    "maxInFlight": 4,
+    "bypass": {
+      "requests": 32,
+      "elapsedMs": 51,
+      "requestsPerSecond": 631.1,
+      "p50Ms": 40,
+      "p95Ms": 47,
+      "p99Ms": 47,
+      "maxMs": 47,
+      "statuses": {
+        "200": 32
+      }
+    }
+  },
+  "sustained120": {
+    "requests": 960,
+    "elapsedMs": 8979,
+    "requestsPerSecond": 106.9,
+    "p50Ms": 577,
+    "p95Ms": 906,
+    "p99Ms": 984,
+    "maxMs": 1050,
+    "statuses": {
+      "200": 960
+    },
+    "maxInFlight": 100,
+    "bypass": {
+      "requests": 32,
+      "elapsedMs": 69,
+      "requestsPerSecond": 461.6,
+      "p50Ms": 63,
+      "p95Ms": 67,
+      "p99Ms": 67,
+      "maxMs": 67,
+      "statuses": {
+        "200": 32
+      }
+    }
+  },
+  "cleanup": {
+    "runs": 248,
+    "errors": 0
+  },
+  "capacity": {
+    "requests": 80,
+    "elapsedMs": 686,
+    "requestsPerSecond": 116.6,
+    "p50Ms": 433,
+    "p95Ms": 656,
+    "p99Ms": 678,
+    "maxMs": 678,
+    "statuses": {
+      "200": 20,
+      "429": 60
+    }
+  },
+  "expiryCleanup": {
+    "elapsedMs": 57,
+    "after": {
+      "ms": 14.149494999997842,
+      "status": 200
+    }
+  },
+  "contention": {
+    "requests": 160,
+    "elapsedMs": 2272,
+    "requestsPerSecond": 70.4,
+    "p50Ms": 357,
+    "p95Ms": 2267,
+    "p99Ms": 2272,
+    "maxMs": 2272,
+    "statuses": {
+      "503": 160
+    },
+    "bypass": {
+      "requests": 32,
+      "elapsedMs": 246,
+      "requestsPerSecond": 130,
+      "p50Ms": 61,
+      "p95Ms": 245,
+      "p99Ms": 245,
+      "maxMs": 245,
+      "statuses": {
+        "200": 32
+      }
+    }
+  },
+  "recovery": {
+    "ms": 78.13556699999754,
+    "status": 200
+  },
+  "poolExhaustion": {
+    "requests": 80,
+    "elapsedMs": 2178,
+    "requestsPerSecond": 36.7,
+    "p50Ms": 221,
+    "p95Ms": 2175,
+    "p99Ms": 2176,
+    "maxMs": 2176,
+    "statuses": {
+      "503": 80
+    },
+    "bypass": {
+      "requests": 32,
+      "elapsedMs": 115,
+      "requestsPerSecond": 277.7,
+      "p50Ms": 36,
+      "p95Ms": 112,
+      "p99Ms": 113,
+      "maxMs": 113,
+      "statuses": {
+        "200": 32
+      }
+    }
+  },
+  "connectionFailure": {
+    "requests": 80,
+    "elapsedMs": 2142,
+    "requestsPerSecond": 37.3,
+    "p50Ms": 180,
+    "p95Ms": 2125,
+    "p99Ms": 2140,
+    "maxMs": 2140,
+    "statuses": {
+      "503": 80
+    },
+    "bypass": {
+      "requests": 32,
+      "elapsedMs": 102,
+      "requestsPerSecond": 314.6,
+      "p50Ms": 31,
+      "p95Ms": 100,
+      "p99Ms": 100,
+      "maxMs": 100,
+      "statuses": {
+        "200": 32
+      }
+    }
+  },
+  "connectionRecovery": {
+    "ms": 72.98917699999583,
+    "status": 200
+  },
+  "poolPeaks": [
+    {
+      "connections": 5,
+      "waiting": 20,
+      "acquiring": 20
+    },
+    {
+      "connections": 5,
+      "waiting": 25,
+      "acquiring": 25
+    },
+    {
+      "connections": 5,
+      "waiting": 8,
+      "acquiring": 10
+    },
+    {
+      "connections": 5,
+      "waiting": 8,
+      "acquiring": 10
+    },
+    {
+      "connections": 5,
+      "waiting": 8,
+      "acquiring": 10
+    },
+    {
+      "connections": 5,
+      "waiting": 9,
+      "acquiring": 10
+    },
+    {
+      "connections": 5,
+      "waiting": 9,
+      "acquiring": 10
+    },
+    {
+      "connections": 5,
+      "waiting": 8,
+      "acquiring": 10
+    }
+  ]
+}

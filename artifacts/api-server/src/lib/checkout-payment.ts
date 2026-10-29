@@ -21,7 +21,8 @@ export type VerifiedTransaction = {
   currency?: string;
   metadata?: {
     order_id?: number;
-    purpose?: "merchandise-balance" | "shipping-fee";
+    purpose?: "merchandise-balance" | "shipping-fee" | "account-outstanding";
+    account_payment?: string;
     initial_payment?: boolean | string;
     return_url?: string;
   };
@@ -31,7 +32,7 @@ const cents = (value: string) => Math.round(Number(value) * 100);
 const money = (value: number) => (value / 100).toFixed(2);
 const paymentStages = new Set(["New Order", "Awaiting Payment", "Awaiting 80% Payment", "Payment Pending", "Processing"]);
 
-export function verifiedPaymentUpdate(order: PaymentOrder, transaction: VerifiedTransaction) {
+export function verifiedPaymentUpdate(order: PaymentOrder, transaction: VerifiedTransaction, options: { allowPartialBalance?: boolean } = {}) {
   const purpose = transaction.metadata?.purpose;
   const paid = transaction.amount;
   if (transaction.status !== "success" || transaction.currency !== "GHS"
@@ -57,15 +58,25 @@ export function verifiedPaymentUpdate(order: PaymentOrder, transaction: Verified
     } else {
       if (previouslyPaid < minimum) return null;
       if (previouslyPaid !== total) {
-        if (paid !== total - previouslyPaid) return null;
-        nextPaid = total;
+        if (options.allowPartialBalance) {
+          if (paid! > total - previouslyPaid) return null;
+          nextPaid = previouslyPaid + paid!;
+        } else {
+          if (paid !== total - previouslyPaid) return null;
+          nextPaid = total;
+        }
       }
     }
   } else if (purpose === "shipping-fee") {
     if (!preorderOnly || previouslyPaid < minimum || shippingTotal <= 0) return null;
     if (shippingPaid !== shippingTotal) {
-      if (paid !== shippingTotal - shippingPaid) return null;
-      nextShippingPaid = shippingTotal;
+      if (options.allowPartialBalance) {
+        if (paid! > shippingTotal - shippingPaid) return null;
+        nextShippingPaid = shippingPaid + paid!;
+      } else {
+        if (paid !== shippingTotal - shippingPaid) return null;
+        nextShippingPaid = shippingTotal;
+      }
     }
   } else return null;
 

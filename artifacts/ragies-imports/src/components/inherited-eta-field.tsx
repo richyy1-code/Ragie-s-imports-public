@@ -14,11 +14,10 @@ export function InheritedEtaField({ shipmentId, rawEta, onChange, testId = 'prod
     </label>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
       <p className="text-xs leading-5 text-muted-foreground" aria-live="polite">
-        {inherited ? batch ? `Using ${batch.name} batch date. It will follow future batch date changes.` : 'Choose a shipment batch to inherit its expected arrival date.' : 'Custom product date. It will not change when the batch date changes.'}
+        {inherited ? batch ? `Using ${batch.name} batch date.` : 'Choose a shipment batch to inherit its expected arrival date.' : 'Custom product date.'}
       </p>
       {!inherited && <button type="button" onClick={() => onChange('')} className="text-xs font-bold text-primary underline" data-testid={`${testId}-reset`}>Use batch date</button>}
     </div>
     {batches.isError && <p role="alert" className="mt-2 text-xs text-destructive">Batch date unavailable. The custom date can still be set.</p>}
-    <p className="mt-2 text-xs text-muted-foreground">Customer arrival SMS is sent only after staff confirms the shipment has arrived.</p>
   </div>;
 }

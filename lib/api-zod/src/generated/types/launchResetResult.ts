@@ -11,6 +11,7 @@ export interface LaunchResetResult {
   ordersDeleted: number;
   shipmentsDeleted: number;
   smsNotificationsDeleted: number;
+  accountPaymentsDeleted: number;
   accountsDeleted: number;
   accountsFailed: number;
   databaseAlreadyReset: boolean;

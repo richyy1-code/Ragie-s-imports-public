@@ -70,7 +70,7 @@ import {
   ResetLaunchDataResponse,
   ListProductBatchesResponse,
 } from "@workspace/api-zod";
-import { db, ordersTable, productsTable, promotionsTable, shipmentsTable, siteContentTable, settingsTable } from "@workspace/db";
+import { db, accountPaymentsTable, ordersTable, productsTable, promotionsTable, shipmentsTable, siteContentTable, settingsTable } from "@workspace/db";
 import {
   countAvailableStock,
   ensureSeedData,
@@ -89,7 +89,7 @@ import { normalizePhoneNumber, storedPhoneNumber, optionalPhoneNumber } from "..
 import { phoneMatches } from "../lib/phone-queries";
 
 const router: IRouter = Router();
-import { ownerEmails } from "../lib/staff-access";
+const ownerEmails = new Set(["rboamp30@colby.edu", "ragieappiah@gmail.com"]);
 const allowedPermissions = new Set([
   "dashboard", "orders", "customers", "payments", "inventory", "products",
   "shipments", "promotions", "content", "access", "data-protection",
@@ -441,6 +441,7 @@ router.post("/admin/data-protection/clear-test-orders", async (req, res): Promis
   }
   const ordersDeleted = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(724391)`);
+    await tx.delete(accountPaymentsTable);
     const removed = await tx.delete(ordersTable).returning({ id: ordersTable.id });
     return removed.length;
   });

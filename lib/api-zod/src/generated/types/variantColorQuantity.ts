@@ -7,7 +7,6 @@
  */
 
 export interface VariantColorQuantity {
-  /** @minLength 1 */
   color: string;
   /** @minimum 0 */
   quantity: number;

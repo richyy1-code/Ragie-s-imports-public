@@ -254,6 +254,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /me/orders/payment:
+    post:
+      operationId: prepareAccountPayment
+      tags: [storefront]
+      summary: Prepare one payment for the customer's outstanding orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountPaymentInput"
+      responses:
+        "200":
+          description: Payment ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountPaymentPreparation"
+        "400":
+          description: Invalid payment or delivery details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Sign in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Balances changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /me/orders/{id}/payment:
     post:
       operationId: prepareOrderPayment
@@ -1109,7 +1145,7 @@ components:
     VariantColorQuantity:
       type: object
       properties:
-        color: { type: string, minLength: 1 }
+        color: { type: string }
         quantity: { type: integer, minimum: 0 }
       required: [color, quantity]
     HealthStatus:
@@ -1458,12 +1494,68 @@ components:
           items:
             $ref: "#/components/schemas/OrderLineInput"
       required: [customerName, phone, address, city, fulfillmentMethod, paymentMethod, items]
+    DeliveryDetails:
+      type: object
+      properties:
+        fulfillmentMethod:
+          type: string
+          enum: [delivery, pickup]
+        address:
+          type: string
+          maxLength: 500
+        city:
+          type: string
+          maxLength: 120
+      required: [fulfillmentMethod, address, city]
+    AccountPaymentInput:
+      type: object
+      properties:
+        expectedAmount:
+          type: number
+          exclusiveMinimum: 0
+        orders:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            properties:
+              orderId:
+                type: integer
+                minimum: 1
+              deliveryDetails:
+                $ref: "#/components/schemas/DeliveryDetails"
+            required: [orderId]
+      required: [orders, expectedAmount]
+    AccountPaymentPreparation:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        providerReady:
+          type: boolean
+        authorizationUrl:
+          type: string
+        reference:
+          type: string
+        orderCount:
+          type: integer
+        message:
+          type: string
+      required: [amount, currency, providerReady, authorizationUrl, reference, orderCount, message]
     PaymentPreparationInput:
       type: object
       properties:
         purpose:
           type: string
           enum: [merchandise-balance, shipping-fee]
+        expectedAmount:
+          type: number
+          exclusiveMinimum: 0
+        deliveryDetails:
+          $ref: "#/components/schemas/DeliveryDetails"
       required: [purpose]
     CheckoutPaymentInput:
       type: object
@@ -1844,12 +1936,13 @@ components:
           enum: [DELETE TEST DATA]
     LaunchResetResult:
       type: object
-      required: [productsDeleted, ordersDeleted, shipmentsDeleted, smsNotificationsDeleted, accountsDeleted, accountsFailed, databaseAlreadyReset]
+      required: [productsDeleted, ordersDeleted, shipmentsDeleted, smsNotificationsDeleted, accountPaymentsDeleted, accountsDeleted, accountsFailed, databaseAlreadyReset]
       properties:
         productsDeleted: { type: integer }
         ordersDeleted: { type: integer }
         shipmentsDeleted: { type: integer }
         smsNotificationsDeleted: { type: integer }
+        accountPaymentsDeleted: { type: integer }
         accountsDeleted: { type: integer }
         accountsFailed: { type: integer }
         databaseAlreadyReset: { type: boolean }

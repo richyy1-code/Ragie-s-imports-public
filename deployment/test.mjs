@@ -17,7 +17,7 @@ for (const directory of ['artifacts/api-server/src/lib', 'artifacts/ragies-impor
 }
 const result = spawnSync(process.execPath, ['--test', ...tests], {
   stdio: 'inherit',
-  env: { ...process.env, NODE_ENV: 'test', OWNER_EMAILS: 'owner@example.com', DATABASE_URL: 'postgresql://synthetic:synthetic@127.0.0.1:1/synthetic' },
+  env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: 'postgresql://synthetic:synthetic@127.0.0.1:1/synthetic' },
 });
 if (result.error) throw result.error;
 process.exit(result.status ?? 1);

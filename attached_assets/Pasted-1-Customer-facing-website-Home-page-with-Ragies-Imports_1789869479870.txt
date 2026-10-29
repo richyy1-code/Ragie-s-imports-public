@@ -1,0 +1,220 @@
+1. Customer-facing website
+
+* Home page with Ragies Imports branding
+* About Us
+* Available products
+* Pre-order products
+* Product categories
+* Product search and filters
+* Product images, descriptions, prices, available colours/sizes and quantities
+* Customers should be able to add items to cart and place orders
+* Customer checkout page
+* Option for customers to create an account or check their order using their order number/phone number
+* Order confirmation after checkout
+* Mobile-friendly design because most of my customers use phones
+
+2. Order management/admin dashboard
+I need a proper admin dashboard where I can see and manage ALL orders.
+
+Each order should have:
+
+* Automatically generated unique order number
+* Customer name
+* Phone number
+* WhatsApp number (if different)
+* Customer address/location
+* Products ordered
+* Quantity
+* Product variations such as colour/size
+* Total amount
+* Amount paid
+* Balance remaining
+* Payment status
+* Order status
+* Date ordered
+* Notes
+
+I should be able to:
+
+* Add orders manually
+* Edit orders
+* Delete/cancel orders
+* Search orders
+* Filter orders by date, customer, payment status, order status, product, etc.
+* Change order status
+* Record partial payments
+* Add notes to individual orders
+* Export orders to Excel/CSV
+* Print/download order information
+
+3. Order statuses
+I want customizable statuses such as:
+
+* New Order
+* Payment Pending
+* Partially Paid
+* Paid
+* Processing
+* In China
+* Shipped
+* Arrived in Ghana
+* Ready for Pickup
+* Out for Delivery
+* Completed
+* Cancelled
+
+4. Pre-order system
+Since a large part of my business is pre-orders:
+
+* Customers should clearly see which products are pre-order items
+* Pre-order closing date should be displayed
+* Expected arrival/ETA should be displayed
+* Customers should be able to order pre-order items
+* I should be able to close pre-orders when the deadline is reached
+* I should be able to update customers if the ETA changes
+* Pre-orders should remain separate from readily available Ghana stock
+
+5. Available-in-Ghana products
+I also sell items that are already available in Ghana.
+These should have a separate section/category so customers can easily distinguish:
+
+* Ready/Available in Ghana
+* Pre-order items
+
+6. Inventory/stock management
+I need to be able to:
+
+* Add products
+* Upload multiple product images
+* Set prices
+* Set stock quantities
+* Track available stock
+* Reduce stock automatically when an order is completed/confirmed
+* Mark products as sold out
+* Restock products
+* Hide products without deleting their information
+
+7. Customer database
+The system should save customer information so that when a returning customer orders again, I can see their previous orders.
+
+I should be able to search a customer and see:
+
+* Contact details
+* Previous orders
+* Total purchases
+* Outstanding balances
+* Current orders
+
+8. Payments
+I want payment tracking built into the order system.
+
+It should allow:
+
+* Full payment
+* Partial payment
+* Outstanding balance
+* Payment date
+* Payment method
+* Payment reference/transaction ID
+* Payment history for each order
+
+If possible, I would also like an option to integrate Ghanaian payment methods such as Mobile Money/payment gateways.
+
+9. Customer notifications
+I would like the system to be able to send customers notifications when their order status changes.
+
+For example:
+“Your order #RI1025 has arrived in Ghana and is ready for pickup.”
+
+If WhatsApp/SMS integration is possible, I would like that discussed as well.
+
+10. Shipping/import tracking
+Because my business involves importing goods, I would like to be able to group orders according to a shipment/batch.
+
+For example:
+
+* June–July Shipment
+* August Shipment
+* September Shipment
+
+Each shipment should have:
+
+* Shipment/batch name
+* Products/orders attached to it
+* Shipping status
+* Expected arrival date
+* Actual arrival date
+* Notes
+
+This would help me track which customer’s goods are in which shipment.
+
+11. Reports
+The admin dashboard should provide basic reports such as:
+
+* Total sales
+* Orders received
+* Paid orders
+* Unpaid/partially paid orders
+* Outstanding balances
+* Available stock
+* Best-selling products
+* Sales by date/month
+* Pre-order sales
+* Available-in-Ghana sales
+
+12. Data security & backups — VERY IMPORTANT
+I want the order information to be stored securely in a proper database.
+
+The system MUST have:
+
+* Automatic backups
+* Data recovery capability
+* Secure admin login
+* Role-based access if I later add staff
+* Protection against accidental deletion
+* Confirmation before permanently deleting orders
+* Ideally, a recycle bin/soft-delete system so deleted orders can be recovered
+
+I don’t want a situation where I enter 50+ orders and they suddenly disappear with no way to recover them.
+
+13. Admin access
+I should have full control over:
+
+* Products
+* Prices
+* Orders
+* Customers
+* Payments
+* Inventory
+* Shipping batches
+* Website content
+* Promotions
+* Pre-order deadlines
+
+If I add staff later, I should be able to give them limited permissions.
+
+14. Promotions
+I want to be able to create promotions such as:
+
+* Percentage discounts
+* Fixed discounts
+* Promo codes
+* Clearance sales
+* Specific products on sale
+* Limited-time promotions
+
+15. Website design
+I want the website to look clean, modern and professional while maintaining the Ragies Imports identity.
+
+The main brand colours are orange and dark blue.
+
+The website should be:
+
+* Mobile-first
+* Fast
+* Easy to navigate
+* Professional
+* Easy for me to manage without needing a developer for every small change.
+
+Most important requirement:
+I don’t just want an ordinary e-commerce website. I want an e-commerce website + reliable order-management system that can handle my growing business and keep my customer/order data safe, backed up and recoverable.

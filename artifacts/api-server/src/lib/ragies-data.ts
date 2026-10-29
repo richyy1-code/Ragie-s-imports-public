@@ -1,3 +1,4 @@
+import { accountOrderDue } from "./account-payment-plan";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db, ordersTable, productsTable, promotionsTable, shipmentsTable, settingsTable, type StoredOrderItem } from "@workspace/db";
 import { effectiveClosingDate, preorderClosed, type ClosingBatch, type ClosingProduct } from "./preorder-closing";
@@ -260,8 +261,8 @@ export function mapOrder(order: typeof ordersTable.$inferSelect) {
      minimumPaymentAmount,
      baseBalance: Number(Math.max(0, total - paid).toFixed(2)),
      shippingBalance: Number(Math.max(0, shippingFeeTotal - shippingFeePaid).toFixed(2)),
-     canPayBalance: paid >= minimumPaymentAmount && balance > 0,
-     canPayShippingFee: shippingFeeTotal > 0 && shippingFeePaid < shippingFeeTotal,
+     canPayBalance: accountOrderDue(order).goodsCents > 0,
+     canPayShippingFee: accountOrderDue(order).shippingCents > 0,
       status: order.status === "Awaiting 80% Payment" || order.status === "Payment Pending" ? "Awaiting Payment" : order.status,
      createdAt: order.createdAt.toISOString(),
   };

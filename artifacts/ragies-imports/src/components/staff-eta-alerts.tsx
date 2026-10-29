@@ -58,7 +58,7 @@ export function StaffEtaAlerts() {
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-border bg-card" aria-labelledby="date-schedule-heading">
-            <div className="border-b border-border p-5 sm:p-6"><p className="eyebrow text-primary">Complete batch schedule</p><h2 id="date-schedule-heading" className="serif mt-1 text-2xl font-semibold">Closing &amp; arrival dates</h2><p className="mt-2 text-xs leading-5 text-muted-foreground">All batches are included, even arrived and completed batches. Customer arrival SMS is sent only after staff confirms the shipment has arrived.</p></div>
+            <div className="border-b border-border p-5 sm:p-6"><p className="eyebrow text-primary">Complete batch schedule</p><h2 id="date-schedule-heading" className="serif mt-1 text-2xl font-semibold">Closing &amp; arrival dates</h2><p className="mt-2 text-xs leading-5 text-muted-foreground">All shipment batches.</p></div>
             {!schedule.length ? <div className="p-5 text-sm text-muted-foreground" data-testid="empty-date-schedule">No batch dates are available yet. Dates will appear here when shipment batches are created.</div> :
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[680px] table-fixed text-left" data-testid="table-batch-dates">
