@@ -5,12 +5,8 @@
  * Ragies Imports commerce and order management API
  * OpenAPI spec version: 0.1.0
  */
-import type { DeliveryDetails } from './deliveryDetails';
 import type { PaymentPreparationInputPurpose } from './paymentPreparationInputPurpose';
 
 export interface PaymentPreparationInput {
   purpose: PaymentPreparationInputPurpose;
-  /** @exclusiveMinimum 0 */
-  expectedAmount?: number;
-  deliveryDetails?: DeliveryDetails;
 }

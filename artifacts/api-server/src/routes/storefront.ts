@@ -1,5 +1,3 @@
-import { accountPaymentInput, cents, deliveryDetailsSchema, planAccountPayment } from "../lib/account-payment-plan";
-import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { validPaystackSignature } from "../lib/paystack-signature";
 import { matchesLivePayment, safePaymentReturnPath } from "../lib/payment-security";
@@ -24,7 +22,6 @@ import {
   PreviewPromotionBody,
   PreviewPromotionResponse,
   PrepareOrderPaymentBody,
-  PrepareAccountPaymentResponse,
   PrepareOrderPaymentParams,
   PrepareOrderPaymentResponse,
   InitializeCheckoutPaymentBody,
@@ -34,7 +31,7 @@ import {
   TrackOrderResponse,
   ListMyOrdersResponse,
 } from "@workspace/api-zod";
-import { db, accountPaymentsTable, ordersTable, productsTable, promotionsTable, shipmentsTable, type AccountPaymentAllocation } from "@workspace/db";
+import { db, ordersTable, productsTable, promotionsTable, shipmentsTable } from "@workspace/db";
 import {
   ensureSeedData,
   featuredOrderBy,
@@ -71,8 +68,7 @@ type PaystackTransaction = {
   currency?: string;
   metadata?: {
     order_id?: number;
-    purpose?: PaymentPurpose | "account-outstanding";
-    account_payment?: string;
+    purpose?: PaymentPurpose;
     return_url?: string;
     initial_payment?: boolean | string;
   };
@@ -95,6 +91,11 @@ const paystackRequest = async <T>(path: string, init?: RequestInit): Promise<T> 
   }
   return payload.data;
 };
+
+const paymentDue = (order: typeof ordersTable.$inferSelect, purpose: PaymentPurpose) =>
+  purpose === "shipping-fee"
+    ? Math.max(0, Number(order.shippingFeeTotal) - Number(order.shippingFeePaid))
+    : Math.max(0, Number(order.totalAmount) - Number(order.amountPaid));
 
 const checkoutReturnUrl = (req: Request, orderNumber: string) => {
   const referer = req.get("referer");
@@ -484,79 +485,82 @@ router.get("/me/orders", async (req, res): Promise<void> => {
   res.json(ListMyOrdersResponse.parse(rows.map((order) => mapOrderWithCurrentEtas(order, products, shipments))));
 });
 
-class AccountPaymentError extends Error {
-  constructor(readonly status: number, message: string) { super(message); }
-}
-
-async function prepareAccountPayment(req: Request, userId: string, allocations: AccountPaymentAllocation[]) {
-  const user = await getExistingClerkUser(userId, (id) => clerkClient.users.getUser(id));
-  if (!user) throw new AccountPaymentError(401, missingAccountSessionMessage);
-  const email = user.primaryEmailAddress?.emailAddress;
-  if (!email) throw new AccountPaymentError(400, "Add an email address to your account before paying online.");
-  const amountCents = allocations.reduce((sum, entry) => sum + entry.goodsCents + entry.shippingCents, 0);
-  if (!Number.isSafeInteger(amountCents) || amountCents <= 0 || amountCents > 2147483647) {
-    throw new Error("The payment amount is outside the supported range.");
-  }
-  const reference = `ragies-${allocations[0]!.orderId}-${Date.now()}-${randomUUID().slice(0, 8)}`;
-  // Save first, so a callback arriving before the initialize response is safe.
-  await db.insert(accountPaymentsTable).values({ reference, clerkUserId: userId, amountCents, allocations });
-  const initialized = await paystackRequest<{ authorization_url: string; reference: string }>("/transaction/initialize", {
-    method: "POST",
-    body: JSON.stringify({ email, amount: amountCents, currency: "GHS",
-      callback_url: `${req.protocol}://${req.get("host")}/api/paystack/callback`, reference,
-      metadata: { purpose: "account-outstanding", account_payment: reference, return_url: "/account/orders" },
-    }),
-  });
-  if (initialized.reference !== reference) throw new Error("Payment reference mismatch. Please refresh your orders.");
-  return { amount: amountCents / 100, currency: "GHS", providerReady: true,
-    authorizationUrl: initialized.authorization_url, reference,
-    message: "Continue to Paystack.", orderCount: allocations.length };
-}
-
-router.post("/me/orders/payment", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Sign in to pay your orders." }); return; }
-  const parsed = accountPaymentInput.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.issues[0]?.message }); return; }
-  const ids = parsed.data.orders.map((entry) => entry.orderId);
-  const rows = await db.select().from(ordersTable).where(and(eq(ordersTable.clerkUserId, userId),
-    sql`${ordersTable.id} IN ${ids}`, sql`${ordersTable.deletedAt} IS NULL`));
-  if (rows.length !== ids.length) { res.status(404).json({ error: "An order is no longer available in your account. Refresh your orders." }); return; }
-  let allocations: AccountPaymentAllocation[];
-  try {
-    allocations = parsed.data.orders.map((entry) => planAccountPayment(rows.find((row) => row.id === entry.orderId)!, "all", entry.deliveryDetails));
-  } catch (error) { res.status(400).json({ error: error instanceof Error ? error.message : "Invalid payment." }); return; }
-  const amountCents = allocations.reduce((sum, entry) => sum + entry.goodsCents + entry.shippingCents, 0);
-  if (amountCents !== cents(parsed.data.expectedAmount)) {
-    res.status(409).json({ error: "Your balances have changed. Refresh your orders before paying." }); return;
-  }
-  try { res.json(PrepareAccountPaymentResponse.parse(await prepareAccountPayment(req, userId, allocations))); }
-  catch (error) { res.status(error instanceof AccountPaymentError ? error.status : 502).json({ error: error instanceof Error ? error.message : "Could not prepare this payment." }); }
-});
-
 router.post("/me/orders/:id/payment", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Sign in to pay your order." }); return; }
+  if (!userId) {
+    res.status(401).json({ error: "Sign-in required to prepare a payment." });
+    return;
+  }
   const params = PrepareOrderPaymentParams.safeParse(req.params);
   const parsed = PrepareOrderPaymentBody.safeParse(req.body);
-  const delivery = z.object({ deliveryDetails: deliveryDetailsSchema.optional() }).safeParse(req.body);
-  if (!params.success || !parsed.success || !delivery.success) {
-    res.status(400).json({ error: !delivery.success ? delivery.error.issues[0]?.message : "Invalid payment details." }); return;
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ error: !params.success ? params.error.message : parsed.error?.message });
+    return;
   }
-  const [order] = await db.select().from(ordersTable).where(and(eq(ordersTable.id, params.data.id),
-    eq(ordersTable.clerkUserId, userId), sql`${ordersTable.deletedAt} IS NULL`));
-  if (!order) { res.status(404).json({ error: "Order not found in your account." }); return; }
-  let allocation: AccountPaymentAllocation;
-  try { allocation = planAccountPayment(order, parsed.data.purpose, delivery.data.deliveryDetails); }
-  catch (error) { res.status(400).json({ error: error instanceof Error ? error.message : "Invalid payment." }); return; }
-  if (parsed.data.expectedAmount != null && cents(parsed.data.expectedAmount) !== allocation.goodsCents + allocation.shippingCents) {
-    res.status(409).json({ error: "Your balance has changed. Refresh your order before paying." }); return;
+  const [order] = await db.select().from(ordersTable).where(and(
+    eq(ordersTable.id, params.data.id),
+    eq(ordersTable.clerkUserId, userId),
+    sql`${ordersTable.deletedAt} IS NULL`,
+  ));
+  if (!order) {
+    res.status(404).json({ error: "Order not found in your account." });
+    return;
   }
-  try {
-    const payment = await prepareAccountPayment(req, userId, [allocation]);
-    res.json(PrepareOrderPaymentResponse.parse({ ...payment, orderId: order.id,
-      orderNumber: order.orderNumber, purpose: parsed.data.purpose }));
-  } catch (error) { res.status(error instanceof AccountPaymentError ? error.status : 502).json({ error: error instanceof Error ? error.message : "Could not prepare this payment." }); }
+
+  const amount = paymentDue(order, parsed.data.purpose);
+  const minimum = order.items.every((item) => item.availability === "ghana-stock")
+    ? Number(order.totalAmount) : Number((Number(order.totalAmount) * .8).toFixed(2));
+  if (Number(order.amountPaid) < minimum || order.status === "Cancelled") {
+    res.status(400).json({ error: "Complete the initial checkout before paying an account balance." });
+    return;
+  }
+  if (amount <= 0) {
+    res.status(400).json({
+      error: parsed.data.purpose === "shipping-fee"
+        ? "This order has no outstanding shipping fee."
+        : "This order has no outstanding goods balance.",
+    });
+    return;
+  }
+
+  const user = await getExistingClerkUser(userId, (id) => clerkClient.users.getUser(id));
+  if (!user) {
+    res.status(401).json({ error: missingAccountSessionMessage });
+    return;
+  }
+  const email = user.primaryEmailAddress?.emailAddress;
+  if (!email) {
+    res.status(400).json({ error: "Add an email address to your account before paying online." });
+    return;
+  }
+  const callbackUrl = `${req.protocol}://${req.get("host")}/api/paystack/callback`;
+  const initialized = await paystackRequest<{ authorization_url: string; reference: string }>("/transaction/initialize", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      amount: Math.round(amount * 100),
+      currency: "GHS",
+      callback_url: callbackUrl,
+      reference: `ragies-${order.id}-${Date.now()}-${randomUUID().slice(0, 8)}`,
+      metadata: {
+        order_id: order.id,
+        order_number: order.orderNumber,
+        purpose: parsed.data.purpose,
+        return_url: "/account/orders",
+      },
+    }),
+  });
+  res.json(PrepareOrderPaymentResponse.parse({
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    purpose: parsed.data.purpose,
+    amount,
+    currency: "GHS",
+    providerReady: true,
+    authorizationUrl: initialized.authorization_url,
+    reference: initialized.reference,
+    message: "Continue to Paystack to complete your secure payment.",
+  }));
 });
 
 router.post("/orders/:id/payment", async (req, res): Promise<void> => {
@@ -649,12 +653,9 @@ router.get("/paystack/callback", async (req, res): Promise<void> => {
   }
   const transaction = await paystackRequest<PaystackTransaction>(`/transaction/verify/${encodeURIComponent(reference)}`);
   const applied = matchesLivePayment(transaction, reference) && await applyVerifiedPayment(transaction);
-  const [receipt] = applied && transaction.metadata?.account_payment
-    ? await db.select().from(accountPaymentsTable).where(eq(accountPaymentsTable.reference, reference)) : [];
-  const result = !applied ? "failed" : receipt?.status === "review" ? "review" : "success";
   const returnUrl = safePaymentReturnPath(transaction.metadata?.return_url);
   const separator = returnUrl.includes("?") ? "&" : "?";
-  res.redirect(`${returnUrl}${separator}payment=${result}&reference=${encodeURIComponent(reference)}`);
+  res.redirect(`${returnUrl}${separator}payment=${applied ? "success" : "failed"}&reference=${encodeURIComponent(reference)}`);
 });
 
 router.post("/paystack/webhook", async (req, res): Promise<void> => {

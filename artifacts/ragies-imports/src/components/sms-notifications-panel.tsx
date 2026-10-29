@@ -33,14 +33,14 @@ export function SmsNotificationsPanel() {
     <div>
       <p className="eyebrow text-primary">Customer notifications</p>
       <h1 className="serif mt-2 text-4xl font-semibold">SMS messaging.</h1>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Payment confirmations and order updates.</p>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Automatic payment confirmations and order status updates through Africa’s Talking.</p>
     </div>
     <section className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 font-bold"><MessageCircle size={18} /> SMS service</h2>
+        <h2 className="flex items-center gap-2 font-bold"><MessageCircle size={18} /> Live Africa’s Talking app</h2>
         <span className="rounded-full bg-card px-3 py-1 text-xs font-bold" data-testid="status-sms-configured">{query.isLoading ? "Checking configuration…" : query.isError ? "Configuration unavailable" : query.data?.configured ? "Live sending configured" : "Sending paused"}</span>
       </div>
-      <p className="mt-3 text-sm leading-6">App username: <strong data-testid="sms-app-username">{query.data?.username ?? "Not configured"}</strong> · Sender ID: <strong>{query.data?.senderId ?? "Not approved / not configured"}</strong>.</p>
+      <p className="mt-3 text-sm leading-6">App username: <strong data-testid="sms-app-username">{query.data?.username ?? "Not configured"}</strong> · Sender ID: <strong>{query.data?.senderId ?? "Not approved / not configured"}</strong>. Your live Paystack payments are unchanged.</p>
       {!query.isLoading && !query.isError && !query.data?.configured && <div className="mt-3 rounded-xl border border-primary/20 bg-card p-4 text-sm leading-6" role="status" data-testid="sms-sending-paused">
         Sending is paused. Missing: {query.data?.missingSettings.join(", ")}. New payment confirmations and order updates stay queued. Once the approved sender ID is configured, queued messages will be sent automatically.
       </div>}
@@ -67,11 +67,11 @@ export function SmsNotificationsPanel() {
         <button onClick={() => void query.refetch()} className="flex items-center gap-2 text-xs font-semibold" disabled={query.isFetching}><RefreshCw size={14} /> Refresh</button>
       </div>
       {query.isLoading ? <p className="p-5 text-sm text-muted-foreground">Loading messages…</p>
-        : !query.data?.notifications.length ? <p className="p-5 text-sm text-muted-foreground">No messages yet.</p>
+        : !query.data?.notifications.length ? <p className="p-5 text-sm text-muted-foreground">No messages yet. A newly confirmed payment or order status change will appear here.</p>
         : <div className="divide-y divide-border" data-testid="list-sms-notifications">{query.data.notifications.map((item) => <article key={item.id} className="p-5" data-testid={`sms-notification-${item.id}`}>
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <p className="font-bold">{item.phone} <span className="ml-2 font-normal text-muted-foreground">{({ payment: "Payment confirmation", "order-status": "Order update", arrival: "Confirmed arrival", "staff-eta": "Staff ETA reminder", "eta-due": "Previous customer ETA reminder", "eta-update": "Previous arrival estimate update", test: "Live test" } as Record<string, string>)[item.kind] ?? "Order update"}</span></p>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${["failed", "unknown", "skipped"].includes(item.status) ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>{item.status === "pending" && !query.data.configured ? "Queued" : labels[item.status] ?? item.status}</span>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${["failed", "unknown", "skipped"].includes(item.status) ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>{item.status === "pending" && !query.data.configured ? "Queued — sending paused" : labels[item.status] ?? item.status}</span>
           </div>
           <p className="mt-3 break-words text-sm leading-6">{item.message}</p>
           {item.error && <p className="mt-2 text-xs text-destructive">{item.error}</p>}

@@ -7,10 +7,7 @@ export function productEditorPatch(before: Product | ProductUpdate, after: Produ
   )) as ProductUpdate;
 }
 
-export type OptionRow = { sizeType: string; color: string; quantity: string };
-export type OptionsState = { colors: string; sizes: string; variants: string; matrix: string; stockQuantity: string;
-  rows?: OptionRow[]; legacyRows?: OptionRow[]; legacySharedStock?: number; quantitiesConfirmed?: boolean };
-export const emptyOptionRow = (): OptionRow => ({ sizeType: '', color: '', quantity: '0' });
+export type OptionsState = { colors: string; sizes: string; variants: string; matrix: string; stockQuantity: string };
 
 const list = (value: string) => value.split(',').map((entry) => entry.trim()).filter(Boolean);
 
@@ -72,18 +69,6 @@ export function optionsFromProduct(product: Product): OptionsState {
     variants: quant ? '' : product.variants.map((variant) => `${variant.name}: ${variant.colors.join(', ')}`).join('\n'),
     matrix: quant ? formatSizeMatrix(product.variants) : '',
     stockQuantity: String(product.stockQuantity),
-    ...(quant ? { rows: product.variants.flatMap((variant) => (variant.quantities ?? []).map((entry) => ({
-      sizeType: variant.name, color: entry.color, quantity: String(entry.quantity),
-    }))) } : product.variants.length || product.sizes.length || product.colors.length ? {
-      legacySharedStock: product.stockQuantity,
-      legacyRows: product.variants.length
-        ? product.variants.flatMap((variant) => (variant.colors.length ? variant.colors : ['']).flatMap((color) =>
-          (product.sizes.length ? product.sizes : ['']).map((size) => ({
-            sizeType: [variant.name, size].filter(Boolean).join(' / '), color, quantity: '0',
-          }))))
-        : (product.sizes.length ? product.sizes : ['']).flatMap((sizeType) =>
-          (product.colors.length ? product.colors : ['']).map((color) => ({ sizeType, color, quantity: '0' }))),
-    } : { rows: [{ sizeType: '', color: '', quantity: String(product.stockQuantity) }] }),
   };
 }
 
@@ -92,12 +77,6 @@ export type OptionsResult =
   | { ok: false; errors: string[] };
 
 export function buildOptionsPayload(state: OptionsState): OptionsResult {
-  if (state.rows) {
-    if ((state.legacySharedStock ?? 0) > 0 && !state.quantitiesConfirmed) {
-      return { ok: false, errors: ['Enter quantities for the existing options before saving.'] };
-    }
-    return buildRowsPayload(state.rows);
-  }
   if (state.matrix.trim()) {
     const parsed = parseSizeMatrix(state.matrix);
     if (parsed.errors.length) return { ok: false, errors: parsed.errors };
@@ -114,9 +93,9 @@ export function buildOptionsPayload(state: OptionsState): OptionsResult {
 /** Remaining stock for a quantified combination, or null when stock is not tracked per combination. */
 export function variantStock(product: Product, size: string | null, color: string | null): number | null {
   if (!isQuantified(product.variants)) return null;
-  const variant = product.variants.find((entry) => entry.name === (size ?? ''));
+  const variant = product.variants.find((entry) => entry.name === size);
   if (!variant) return 0;
-  const match = (variant.quantities ?? []).find((entry) => entry.color === (color ?? ''));
+  const match = (variant.quantities ?? []).find((entry) => entry.color === color);
   return match ? match.quantity : 0;
 }
 
@@ -147,52 +126,4 @@ export function procurementBreakdown(orders: Order[]): ProcurementRow[] {
     else rows.set(key, { key, productId: item.productId, productName: item.productName, size: item.size, color: item.color, variantType: item.variantType, quantity: item.quantity });
   }));
   return Array.from(rows.values()).sort((a, b) => a.productName.localeCompare(b.productName) || (a.size ?? '').localeCompare(b.size ?? '') || (a.color ?? '').localeCompare(b.color ?? '') || (a.variantType ?? '').localeCompare(b.variantType ?? ''));
-}
-
-/** Literal input fields: punctuation is part of the label, never a delimiter. */
-export function buildRowsPayload(rows: OptionRow[]): OptionsResult {
-  const groups = new Map<string, ProductVariant>();
-  const pairs = new Set<string>();
-  const colors: string[] = [];
-  let total = 0;
-  const normalized = rows.map((row) => ({
-    sizeType: row.sizeType.trim(), color: row.color.trim(), quantity: row.quantity.trim() || '0',
-  }));
-  const meaningful = normalized.filter((row) => row.sizeType || row.color || Number(row.quantity) !== 0);
-  for (const [index, row] of normalized.entries()) {
-    if (!/^\d+$/.test(row.quantity) || !Number.isSafeInteger(Number(row.quantity))) {
-      return { ok: false, errors: [`Option ${index + 1}: enter a whole quantity of zero or more.`] };
-    }
-  }
-  // A single unnamed option tracks quantity without asking buyers for extra choices.
-  if (!meaningful.some((row) => row.sizeType || row.color)) {
-    total = normalized.reduce((sum, row) => sum + Number(row.quantity), 0);
-    if (total > 2147483647) return { ok: false, errors: ['The total quantity is too large.'] };
-    return { ok: true, data: { colors: [], sizes: [], variants: [{ name: '', colors: [], quantities: [{ color: '', quantity: total }] }], stockQuantity: total } };
-  }
-  for (const row of meaningful) {
-    const key = row.sizeType.toLowerCase();
-    const pair = JSON.stringify([key, row.color.toLowerCase()]);
-    if (pairs.has(pair)) return { ok: false, errors: ['This size/type and colour is already listed. Combine its quantities in one row.'] };
-    pairs.add(pair);
-    let group = groups.get(key);
-    if (!group) { group = { name: row.sizeType, colors: [], quantities: [] }; groups.set(key, group); }
-    group.quantities!.push({ color: row.color, quantity: Number(row.quantity) });
-    if (row.color) {
-      group.colors.push(row.color);
-      if (!colors.some((color) => color.toLowerCase() === row.color.toLowerCase())) colors.push(row.color);
-    }
-    total += Number(row.quantity);
-  }
-  if (!Number.isSafeInteger(total) || total > 2147483647) return { ok: false, errors: ['The total quantity is too large.'] };
-  const variants = [...groups.values()];
-  return { ok: true, data: { colors, sizes: variants.map((variant) => variant.name).filter(Boolean), variants, stockQuantity: total } };
-}
-
-export function optionEditorRows(state: OptionsState): OptionRow[] {
-  if (state.rows?.length) return state.rows;
-  if (state.legacyRows?.length) return state.legacyRows;
-  if (state.matrix.trim()) return parseSizeMatrix(state.matrix).variants.flatMap((variant) =>
-    (variant.quantities ?? []).map((entry) => ({ sizeType: variant.name, color: entry.color, quantity: String(entry.quantity) })));
-  return [{ sizeType: '', color: '', quantity: state.stockQuantity || '0' }];
 }

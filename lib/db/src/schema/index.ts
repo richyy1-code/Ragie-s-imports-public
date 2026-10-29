@@ -6,4 +6,3 @@ export * from "./site-content";
 export * from "./settings";
 export * from "./sms-notifications";
 export * from "./abuse-windows";
-export * from "./account-payments";

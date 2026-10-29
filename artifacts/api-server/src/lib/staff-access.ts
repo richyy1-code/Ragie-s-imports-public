@@ -1,4 +1,10 @@
-export const ownerEmails = new Set(["rboamp30@colby.edu", "ragieappiah@gmail.com"]);
+export function parseOwnerEmails(value: string | undefined): Set<string> {
+  return new Set((value ?? "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean));
+}
+
+// No built-in owner: a fresh installation grants access only to configured,
+// verified email addresses. Keep this value in the server environment.
+export const ownerEmails = parseOwnerEmails(process.env.OWNER_EMAILS);
 export const staffPermissions = [
   "dashboard", "orders", "customers", "payments", "inventory", "products",
   "shipments", "promotions", "content", "access", "data-protection",

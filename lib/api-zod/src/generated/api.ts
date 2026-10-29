@@ -144,6 +144,7 @@ export const ListProductsQueryParams = zod.object({
 
 export const listProductsResponseCostPriceMin = 0;
 
+
 export const listProductsResponseVariantsItemQuantitiesItemQuantityMin = 0;
 
 export const listProductsResponseStockQuantityMin = 0;
@@ -169,7 +170,7 @@ export const ListProductsResponseItem = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(listProductsResponseVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })),
@@ -192,6 +193,7 @@ export const GetProductParams = zod.object({
 })
 
 export const getProductResponseCostPriceMin = 0;
+
 
 export const getProductResponseVariantsItemQuantitiesItemQuantityMin = 0;
 
@@ -218,7 +220,7 @@ export const GetProductResponse = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(getProductResponseVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })),
@@ -422,65 +424,14 @@ export const ListMyOrdersResponse = zod.array(ListMyOrdersResponseItem)
 
 
 /**
- * @summary Prepare one payment for the customer's outstanding orders
- */
-export const prepareAccountPaymentBodyExpectedAmountExclusiveMin = 0;
-
-
-export const prepareAccountPaymentBodyOrdersItemDeliveryDetailsAddressMax = 500;
-
-export const prepareAccountPaymentBodyOrdersItemDeliveryDetailsCityMax = 120;
-
-export const prepareAccountPaymentBodyOrdersMax = 100;
-
-
-
-export const PrepareAccountPaymentBody = zod.object({
-  "expectedAmount": zod.number().gt(prepareAccountPaymentBodyExpectedAmountExclusiveMin),
-  "orders": zod.array(zod.object({
-  "orderId": zod.number().int().min(1),
-  "deliveryDetails": zod.object({
-  "fulfillmentMethod": zod.enum(['delivery', 'pickup']),
-  "address": zod.string().max(prepareAccountPaymentBodyOrdersItemDeliveryDetailsAddressMax),
-  "city": zod.string().max(prepareAccountPaymentBodyOrdersItemDeliveryDetailsCityMax)
-}).optional()
-})).min(1).max(prepareAccountPaymentBodyOrdersMax)
-})
-
-export const PrepareAccountPaymentResponse = zod.object({
-  "amount": zod.number(),
-  "currency": zod.string(),
-  "providerReady": zod.boolean(),
-  "authorizationUrl": zod.string(),
-  "reference": zod.string(),
-  "orderCount": zod.number().int(),
-  "message": zod.string()
-})
-
-
-/**
  * @summary Prepare an outstanding order payment for the signed-in customer
  */
 export const PrepareOrderPaymentParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
-export const prepareOrderPaymentBodyExpectedAmountExclusiveMin = 0;
-
-export const prepareOrderPaymentBodyDeliveryDetailsAddressMax = 500;
-
-export const prepareOrderPaymentBodyDeliveryDetailsCityMax = 120;
-
-
-
 export const PrepareOrderPaymentBody = zod.object({
-  "purpose": zod.enum(['merchandise-balance', 'shipping-fee']),
-  "expectedAmount": zod.number().gt(prepareOrderPaymentBodyExpectedAmountExclusiveMin).optional(),
-  "deliveryDetails": zod.object({
-  "fulfillmentMethod": zod.enum(['delivery', 'pickup']),
-  "address": zod.string().max(prepareOrderPaymentBodyDeliveryDetailsAddressMax),
-  "city": zod.string().max(prepareOrderPaymentBodyDeliveryDetailsCityMax)
-}).optional()
+  "purpose": zod.enum(['merchandise-balance', 'shipping-fee'])
 })
 
 export const PrepareOrderPaymentResponse = zod.object({
@@ -660,6 +611,7 @@ export const UpdateExchangeRateResponse = zod.object({
  */
 export const listAdminInventoryResponseCostPriceMin = 0;
 
+
 export const listAdminInventoryResponseVariantsItemQuantitiesItemQuantityMin = 0;
 
 export const listAdminInventoryResponseStockQuantityMin = 0;
@@ -685,7 +637,7 @@ export const ListAdminInventoryResponseItem = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(listAdminInventoryResponseVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })),
@@ -719,6 +671,7 @@ export const UpdateInventoryBody = zod.object({
 
 export const updateInventoryResponseCostPriceMin = 0;
 
+
 export const updateInventoryResponseVariantsItemQuantitiesItemQuantityMin = 0;
 
 export const updateInventoryResponseStockQuantityMin = 0;
@@ -744,7 +697,7 @@ export const UpdateInventoryResponse = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(updateInventoryResponseVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })),
@@ -962,7 +915,6 @@ export const ResetLaunchDataResponse = zod.object({
   "ordersDeleted": zod.number().int(),
   "shipmentsDeleted": zod.number().int(),
   "smsNotificationsDeleted": zod.number().int(),
-  "accountPaymentsDeleted": zod.number().int(),
   "accountsDeleted": zod.number().int(),
   "accountsFailed": zod.number().int(),
   "databaseAlreadyReset": zod.boolean()
@@ -973,6 +925,7 @@ export const ResetLaunchDataResponse = zod.object({
  * @summary Export a complete operational data snapshot
  */
 export const exportDataSnapshotResponseProductsItemCostPriceMin = 0;
+
 
 export const exportDataSnapshotResponseProductsItemVariantsItemQuantitiesItemQuantityMin = 0;
 
@@ -1051,7 +1004,7 @@ export const ExportDataSnapshotResponse = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(exportDataSnapshotResponseProductsItemVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })),
@@ -1588,6 +1541,7 @@ export const createProductBodyCostPriceMin = 0;
 
 export const createProductBodyStockQuantityMin = 0;
 
+
 export const createProductBodyVariantsItemQuantitiesItemQuantityMin = 0;
 
 
@@ -1609,7 +1563,7 @@ export const CreateProductBody = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(createProductBodyVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })).optional(),
@@ -1618,6 +1572,7 @@ export const CreateProductBody = zod.object({
 })
 
 export const createProductResponseCostPriceMin = 0;
+
 
 export const createProductResponseVariantsItemQuantitiesItemQuantityMin = 0;
 
@@ -1644,7 +1599,7 @@ export const CreateProductResponse = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(createProductResponseVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })),
@@ -1669,6 +1624,7 @@ export const updateProductBodyPriceMin = 0.01;
 
 export const updateProductBodyCostPriceMin = 0;
 
+
 export const updateProductBodyVariantsItemQuantitiesItemQuantityMin = 0;
 
 export const updateProductBodyStockQuantityMin = 0;
@@ -1691,7 +1647,7 @@ export const UpdateProductBody = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(updateProductBodyVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })).optional(),
@@ -1704,6 +1660,7 @@ export const UpdateProductBody = zod.object({
 })
 
 export const updateProductResponseCostPriceMin = 0;
+
 
 export const updateProductResponseVariantsItemQuantitiesItemQuantityMin = 0;
 
@@ -1730,7 +1687,7 @@ export const UpdateProductResponse = zod.object({
   "name": zod.string(),
   "colors": zod.array(zod.string()),
   "quantities": zod.array(zod.object({
-  "color": zod.string(),
+  "color": zod.string().min(1),
   "quantity": zod.number().int().min(updateProductResponseVariantsItemQuantitiesItemQuantityMin)
 })).optional()
 })),

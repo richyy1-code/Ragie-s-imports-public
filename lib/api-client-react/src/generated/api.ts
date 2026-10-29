@@ -22,8 +22,6 @@ import type {
 import type {
   AccountContactInput,
   AccountContactProfile,
-  AccountPaymentInput,
-  AccountPaymentPreparation,
   AdminOrderInput,
   Category,
   CheckoutPaymentInput,
@@ -1129,94 +1127,6 @@ export function useListMyOrders<TData = Awaited<ReturnType<typeof listMyOrders>>
 
 
 
-
-export const getPrepareAccountPaymentUrl = () => {
-
-
-
-
-  return `/api/me/orders/payment`
-}
-
-/**
- * @summary Prepare one payment for the customer's outstanding orders
- */
-export const prepareAccountPayment = async (accountPaymentInput: AccountPaymentInput, options?: Parameters<typeof customFetch>[1]): Promise<AccountPaymentPreparation> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customFetch<AccountPaymentPreparation>(getPrepareAccountPaymentUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(accountPaymentInput)
-  }
-);}
-
-
-
-
-
-export const getPrepareAccountPaymentMutationKey = () => ['prepareAccountPayment'] as const;
-
-export const getPrepareAccountPaymentMutationOptions = <TError = ErrorType<Error>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof prepareAccountPayment>>, TError,PrepareAccountPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof prepareAccountPayment>>, TError,PrepareAccountPaymentMutationVariables, TContext> => {
-
-const mutationKey = getPrepareAccountPaymentMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof prepareAccountPayment>>, PrepareAccountPaymentMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  prepareAccountPayment(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PrepareAccountPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof prepareAccountPayment>>>
-    export type PrepareAccountPaymentMutationBody = BodyType<AccountPaymentInput>
-    export type PrepareAccountPaymentMutationError = ErrorType<Error>
-    export type PrepareAccountPaymentMutationVariables = {data: BodyType<AccountPaymentInput>}
-
-    /**
- * @summary Prepare one payment for the customer's outstanding orders
- */
-export const usePrepareAccountPayment = <TError = ErrorType<Error>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof prepareAccountPayment>>, TError,PrepareAccountPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof prepareAccountPayment>>,
-        TError,
-        PrepareAccountPaymentMutationVariables,
-        TContext
-      > => {
-      return useMutation(getPrepareAccountPaymentMutationOptions(options));
-    }
 
 export const getPrepareOrderPaymentUrl = (id: number,) => {
 

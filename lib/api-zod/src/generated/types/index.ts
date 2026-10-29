@@ -8,9 +8,6 @@
 
 export * from './accountContactInput';
 export * from './accountContactProfile';
-export * from './accountPaymentInput';
-export * from './accountPaymentInputOrdersItem';
-export * from './accountPaymentPreparation';
 export * from './adminOrderInput';
 export * from './adminOrderInputFulfillmentMethod';
 export * from './batchDateEvent';
@@ -23,8 +20,6 @@ export * from './dashboardSummary';
 export * from './dashboardSummarySalesTrendDirection';
 export * from './dataProtectionSummary';
 export * from './dataSnapshot';
-export * from './deliveryDetails';
-export * from './deliveryDetailsFulfillmentMethod';
 export * from './error';
 export * from './exchangeRate';
 export * from './exchangeRateInput';

@@ -29,6 +29,8 @@ services:
         sync: false
       - key: CLERK_SECRET_KEY
         sync: false
+      - key: OWNER_EMAILS
+        sync: false
       - key: SESSION_SECRET
         sync: false
       - key: PAYSTACK_SECRET_KEY
@@ -36,6 +38,6 @@ services:
       - key: AFRICAS_TALKING_API_KEY
         sync: false
       - key: AFRICAS_TALKING_USERNAME
-        value: ragiesimports
+        sync: false
       - key: AFRICAS_TALKING_SENDER_ID
-        value: RagiesImp
+        sync: false

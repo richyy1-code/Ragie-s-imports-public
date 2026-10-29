@@ -55,21 +55,3 @@ test("plain size-only and colour choices cannot bypass the catalog selections", 
   assert.deepEqual(orderVariant(plain, { quantity: 1, size: "M", color: "Red" }), { size: "M", variantType: null });
   assert.deepEqual(orderVariant({ ...plain, sizes: [], colors: [] }, { quantity: 1 }), { size: null, variantType: null });
 });
-
-test("optional size and colour rows reserve and restore only their own stock", () => {
-  const normalized = quantifiedProductOptions([
-    { name: "M", colors: [], quantities: [{ color: "", quantity: 3 }] },
-    { name: "", colors: ["Blue"], quantities: [{ color: "Blue", quantity: 4 }] },
-  ]);
-  assert.deepEqual(normalized.sizes, ["M"]);
-  assert.deepEqual(normalized.colors, ["Blue"]);
-  const source = { name: "Optional choices", ...normalized } as Parameters<typeof adjustedVariantStock>[0];
-  const lines = [{ size: "M", color: null, quantity: 2 }, { size: null, color: "Blue", quantity: 1 }];
-  const deducted = adjustedVariantStock(source, lines, -1);
-  assert.equal(deducted.stockQuantity, 4);
-  assert.equal(deducted.variants![0]!.quantities[0]!.quantity, 1);
-  assert.equal(deducted.variants![1]!.quantities[0]!.quantity, 3);
-  assert.deepEqual(adjustedVariantStock({ ...source, ...deducted }, lines, 1), normalized);
-  assert.throws(() => adjustedVariantStock(source, [{ size: "M", color: null, quantity: 4 }], -1));
-  assert.throws(() => orderVariant(source, { size: "M", color: "Blue", quantity: 1 }));
-});

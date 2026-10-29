@@ -124,6 +124,7 @@ export interface SmsOverview {
 }
 
 export interface VariantColorQuantity {
+  /** @minLength 1 */
   color: string;
   /** @minimum 0 */
   quantity: number;
@@ -487,48 +488,6 @@ export interface OrderInput {
   items: OrderLineInput[];
 }
 
-export type DeliveryDetailsFulfillmentMethod = typeof DeliveryDetailsFulfillmentMethod[keyof typeof DeliveryDetailsFulfillmentMethod];
-
-
-export const DeliveryDetailsFulfillmentMethod = {
-  delivery: 'delivery',
-  pickup: 'pickup',
-} as const;
-
-export interface DeliveryDetails {
-  fulfillmentMethod: DeliveryDetailsFulfillmentMethod;
-  /** @maxLength 500 */
-  address: string;
-  /** @maxLength 120 */
-  city: string;
-}
-
-export type AccountPaymentInputOrdersItem = {
-  /** @minimum 1 */
-  orderId: number;
-  deliveryDetails?: DeliveryDetails;
-};
-
-export interface AccountPaymentInput {
-  /** @exclusiveMinimum 0 */
-  expectedAmount: number;
-  /**
-     * @minItems 1
-     * @maxItems 100
-     */
-  orders: AccountPaymentInputOrdersItem[];
-}
-
-export interface AccountPaymentPreparation {
-  amount: number;
-  currency: string;
-  providerReady: boolean;
-  authorizationUrl: string;
-  reference: string;
-  orderCount: number;
-  message: string;
-}
-
 export type PaymentPreparationInputPurpose = typeof PaymentPreparationInputPurpose[keyof typeof PaymentPreparationInputPurpose];
 
 
@@ -539,9 +498,6 @@ export const PaymentPreparationInputPurpose = {
 
 export interface PaymentPreparationInput {
   purpose: PaymentPreparationInputPurpose;
-  /** @exclusiveMinimum 0 */
-  expectedAmount?: number;
-  deliveryDetails?: DeliveryDetails;
 }
 
 export type CheckoutPaymentInputChannel = typeof CheckoutPaymentInputChannel[keyof typeof CheckoutPaymentInputChannel];
@@ -936,7 +892,6 @@ export interface LaunchResetResult {
   ordersDeleted: number;
   shipmentsDeleted: number;
   smsNotificationsDeleted: number;
-  accountPaymentsDeleted: number;
   accountsDeleted: number;
   accountsFailed: number;
   databaseAlreadyReset: boolean;
